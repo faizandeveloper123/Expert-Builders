@@ -1,0 +1,139 @@
+================================================================
+  EVEE - CRM CONTACTS DASHBOARD (React + TS + Tailwind + XAMPP MySQL)
+  PROJECT FOLDER & FILE STRUCTURE
+  Last updated: Aug 8, 2026  (MySQL backend integrated)
+================================================================
+
+Evee/
+│
+├── package.json                          # Manifest, deps & scripts (react-icons, TS)
+├── tailwind.config.js                    # Tailwind config (sidebar/crm colors, Inter font)
+├── postcss.config.js                     # PostCSS plugins (tailwind + autoprefixer)
+├── vite.config.js                        # Vite config (React plugin)
+├── tsconfig.json                         # TypeScript config (strict, react-jsx)
+├── index.html                            # HTML entry (Inter font, #root, src/main.tsx)
+├── .gitignore                            # Node modules & build ignores
+├── PROJECT_STRUCTURE.txt                 # This file
+├── PROGRESS.txt                          # Progress tracker (resume point)
+│
+├── sql/                                  # DATABASE LAYER (XAMPP MySQL / MariaDB)
+│   ├── schema.sql                        # Creates evee_crm DB + tables + views + indexes
+│   ├── contact_related.sql               # opportunities/tasks/notes/appointments (FK->contacts)
+│   ├── seed.sql                          # Seeds the 7 original mock contacts
+│   └── auth_notifications.sql            # notifications table + staff password seed ("evee123")
+│
+├── api/                                  # PHP REST API (served by XAMPP Apache)
+│   ├── config.php                        # PDO connection + CORS + helpers
+│   └── index.php                         # Router: contacts/leads/tags + contact sub-resources
+│
+└── src/
+    ├── main.tsx                          # React entry (AuthProvider + renders <App />)
+    ├── index.css                         # Tailwind directives + custom scrollbars/checkbox
+    ├── App.tsx                           # Root: auth gate, permission guard, loads/saves via API
+    ├── api.ts                            # fetch client for the PHP API (all endpoints)
+    ├── auth.tsx                          # AuthContext: session, login/logout, hasPermission
+    ├── utils.ts                          # mapApiContact, date formatting, initials
+    ├── types.ts                          # Contact, ImportedContactInput interfaces
+    ├── StaffContext.tsx                  # StaffProvider + useStaff (staff_users CRUD cache)
+    │
+    ├── data/
+    │   ├── contacts.ts                   # (legacy local mock - no longer used for data)
+    │   ├── formOptions.ts                # Country dial codes + timezone lists
+    │   └── staffPermissions.ts           # Permission categories for user Roles & Permissions
+    │
+    └── components/
+        ├── Sidebar.tsx                   # Logo, business selector, search, nav links, collapse
+        ├── TopBar.tsx                    # Nav tabs + utility buttons + avatar (mobile hamburger)
+        ├── PageHeader.tsx                # Title, count badge, Import, Add Contact, 3-dots menu
+        ├── SmartListTabs.tsx             # All / Leads / Atif / Add Smart List (Leads = v_leads)
+        ├── Toolbar.tsx                   # Filters, Sort, bulk bar, Search Contacts, Manage fields
+        ├── ContactsTable.tsx             # Sticky-header table: checkboxes, avatars, tags
+        ├── Avatar.tsx                    # Reusable avatar circle (initials or image)
+        ├── Tag.tsx                       # Reusable tag pill
+        ├── Pagination.tsx                # Page X of Y, rows per page, Prev/Next
+        ├── AddContactDrawer.tsx          # Slide-over drawer form -> POST /contacts
+        ├── ImportWizard.tsx              # 4-step import modal -> creates contacts
+        ├── LeadDetailPage.tsx            # Workspace: left ContactInfo + center conversation + right dock
+        ├── ContactInfoPanel.tsx          # Left panel: All fields/DND/Actions subtabs + accordions (Owner = staff assign)
+        ├── RightSidebar.tsx              # Right dock + dynamic window (9 panels) + modals
+        ├── AddOpportunityModal.tsx       # Create opportunity modal
+        ├── BookAppointmentModal.tsx      # Book appointment modal (host select from staff)
+        ├── NewBookingModal.tsx           # New booking modal (Assign Host select from staff)
+        ├── MyStaffPage.tsx               # Settings -> My Staff: settings sidebar + staff table + edit modal (DP upload)
+        ├── FormsDashboard.tsx            # Sidebar "Sites" -> HighLevel Forms page (list + editor)
+        ├── LoginPage.tsx                 # Branded login screen (Yadea branding, POST /auth)
+        ├── NotificationsBell.tsx         # Top-bar bell: unread badge, dropdown, browser/email notify
+        └── Toast.tsx                     # Bottom-right notification toast
+
+================================================================
+  HOW TO SET UP & RUN (XAMPP)
+================================================================
+  1. Start XAMPP: Apache + MySQL (phpMyAdmin at http://localhost/phpmyadmin)
+  2. Create schema + seed once:
+       C:\xampp\mysql\bin\mysql.exe -u root < sql\schema.sql
+       C:\xampp\mysql\bin\mysql.exe -u root < sql\seed.sql
+       C:\xampp\mysql\bin\mysql.exe -u root --default-character-set=utf8mb4 -e "source E:/Evee/sql/staff.sql"
+  3. Frontend dev server:
+       npm install
+       npm start            -> http://localhost:5173
+  4. API lives at:  http://localhost/Evee/api/index.php/...
+     (CORS enabled for the Vite origin)
+
+================================================================
+  DATABASE DESIGN (find leads easily)
+================================================================
+  DB      : evee_crm (utf8mb4)
+  Tables  : contacts, tags, contact_tags, staff_users
+  Views   : v_contacts_with_tags (aggregated tags + assigned_to staff),
+            v_leads (leads only)
+  Indexes : PK, UNIQUE phone/email, name, contact_type, is_lead,
+            created_at, last_activity_at, FULLTEXT(first,last,email,business)
+  A contact = lead when is_lead=1 OR contact_type='Lead'
+              OR tagged warm/hot/cold lead.
+  Staff    : staff_users.* + contacts.assigned_to (FK) link a contact to a team
+             member; JSON text columns store call_voicemail, availability,
+             calendar_config, permissions; avatar_data holds the base64 DP.
+
+  QUICK LEAD LOOKUPS (see sql/schema.sql for full examples)
+    - UI: click the "Leads" smart-list tab  -> GET /api/leads
+    - API: GET /api/leads?search=<term>     -> find lead by name/phone/email/tag
+    - SQL: SELECT * FROM v_leads WHERE name LIKE '%faiz%';
+    - SQL: SELECT * FROM contacts WHERE MATCH(...) AGAINST ('faiz' ...);  (FULLTEXT)
+
+================================================================
+  API ENDPOINTS
+================================================================
+  GET    /contacts                  list (filters: search, tag, type, lead, sort, dir)
+  GET    /contacts/{id}             single contact + tags
+  POST   /contacts                  create {first_name,last_name,name?,phone,email,
+                                     business_name,contact_type,avatar_color,
+                                     avatar_data,tags[]}
+  DELETE /contacts/{id}             delete one
+  POST   /contacts/bulk-delete      delete many { ids: [...] }
+  GET    /leads                     leads only (searchable)
+  GET    /tags                      all tags
+  GET/POST /contacts/{id}/opportunities|tasks|notes|appointments   list / create
+  DELETE /opportunities|tasks|notes|appointments/{id}              delete
+  GET    /staff                     list all staff users (avatar_data included)
+  POST   /staff                     create staff  {first_name,last_name,email,auth_token,
+                                     phone,extension,user_type,calendar,restrict_data,
+                                     signature,system_id,avatar_data,call_voicemail,
+                                     availability,calendar_config,permissions}
+  GET    /staff/{id}                single staff user (same row shape)
+  PUT    /staff/{id}                update staff (same fields as POST)
+  DELETE /staff/{id}                delete staff
+  PUT    /contacts/{id}             update contact (e.g. {assigned_to} to (un)assign staff)
+  POST   /auth                      login {email,password} -> staff user + permissions
+  GET    /notifications?staff_id=N  notifications for a user (+&unread=1)
+  GET    /notifications/unread-count?staff_id=N
+  POST   /notifications/{id}/read   mark one as read
+  POST   /notifications/read-all    mark all read {staff_id}
+  POST   /notifications             create {staff_ids[], contact_id?, type?, title, detail}
+  GET    /contacts|/leads           accept ?restrict_to=<staffId> to scope restricted users
+
+================================================================
+  DEPENDENCIES
+================================================================
+  runtime : react, react-dom, react-icons
+  dev     : vite, typescript, tailwindcss, postcss, autoprefixer
+  server  : XAMPP (Apache + PHP + MySQL/MariaDB 10.4)

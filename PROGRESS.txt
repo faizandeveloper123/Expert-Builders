@@ -1,0 +1,298 @@
+================================================================
+  EVEE - CRM CONTACTS DASHBOARD (React + TS + Tailwind + XAMPP MySQL)
+  PROGRESS TRACKER (RESUME POINT FOR OTHER AI TOOLS)
+  Last updated: Aug 8, 2026
+================================================================
+
+STATUS SUMMARY
+-------------
+  Total todos : 10
+  Completed   : 10
+  In progress : 0
+  Remaining   : 0   <- MySQL backend wired + tab structure fixed per user
+
+  Latest batch (Aug 10): countries/searchable dropdowns, opportunity
+  source+close-date+tags, task/note editor fix, note color+attachments+
+  associate-to, "Rentals" replacing "Blocked Slot" -- see RECENT WORK.
+
+TODOS - COMPLETED
+-----------------
+  [x] 1. Verified XAMPP MySQL (MariaDB 10.4.32) running & reachable
+         (root user, empty password, port 3306)
+  [x] 2. Designed + wrote sql/schema.sql
+         - DB evee_crm (utf8mb4)
+         - contacts (full_name generated column, contact_type enum, is_lead flag,
+           avatar_color, avatar_data MEDIUMTEXT, created/last_activity timestamps)
+         - tags + contact_tags (many-to-many)
+         - Indexes: UNIQUE phone & email (dedupe), name, contact_type, is_lead,
+           created_at, last_activity_at + FULLTEXT(name,email,business) for fast search
+         - Views: v_contacts_with_tags, v_leads (leads-only for quick finding)
+  [x] 3. Ran schema + seed in MySQL
+         - sql/seed.sql loads the 7 original UI contacts with tags
+  [x] 4. Built PHP REST API (api/config.php + api/index.php)
+         - CORS enabled (Vite origin), OPTIONS preflight OK (HTTP 204)
+         - PDO with prepared statements (named placeholder uniqueness handled)
+  [x] 5. Endpoints tested with curl/Invoke-WebRequest:
+         - GET /contacts (7), GET /contacts/1, GET /contacts?search=faiz (1),
+         - GET /leads (2 leads), GET /tags (5 tags)
+         - POST /contacts (created id 8, appeared in /leads?search=test)
+         - DELETE /contacts/8 (removed)
+         - POST /contacts/bulk-delete implemented
+  [x] 6. Wired React frontend to API (src/api.ts, src/utils.ts, App.tsx)
+         - Loads contacts from DB on mount; debounced (350ms) server-side search
+         - "Leads" smart-list tab -> queries /api/leads (find leads easily)
+         - Add Contact drawer -> POST /contacts (incl. avatar image base64)
+         - Import wizard -> creates the 3 demo contacts via API
+         - Bulk delete -> POST /contacts/bulk-delete
+         - CSV export uses current DB-loaded list
+  [x] 7. Frontend verification: npm run typecheck (PASSED), npm run build (PASSED),
+         dev server http://localhost:5173 (HTTP 200), API search (HTTP 200)
+  [x] 8. CORS preflight verified (Access-Control-Allow-Origin: *, 204)
+  [x] 9. Updated PROJECT_STRUCTURE.txt + this PROGRESS.txt
+  [x] 10. FIX: Top-bar tabs made functional per user request
+         - "Contacts" tab = page heading/indicator only (shows title + count + a
+           hint pointing to Smart Lists; NO data table)
+         - "Smart Lists" tab = holds ALL the data (SmartListTabs All/Leads/Atif,
+           Toolbar/search, ContactsTable, Pagination)
+         - Other tabs (Bulk Actions, Custom Fields, Tasks, Companies) -> toast
+           "page coming soon"
+         - TopBar.tsx now exports topTabs + accepts activeTab/onSelectTab props
+         - typecheck + build PASSED, dev server live
+
+RECENT WORK (Aug 13, 2026)
+-----------------------
+  [x] 26. ASSIGN / UNASSIGN OWNER ALSO UPDATES LIVE WITH LOGO (Aug 13)
+            - Just like followers, the lead Owner now shows its logo/avatar next
+              to the contact name in the Contacts table, and assigning or
+              unassigning the owner updates IMMEDIATELY - no refresh.
+            - The Owner column (if enabled via Manage Fields) also renders the
+              avatar + name.
+            - HOW: followersStore.ts now also tracks owner state per contact
+              (assignedTo / ownerName / ownerAvatar). ContactInfoPanel writes
+              to it on assign/unassign (and shows the avatar in the owner
+              button), ContactsTable merges it into each row live.
+            - Verified in headless Chrome: assign -> owner label updates, back
+              to table shows owner logo without refresh; unassign removes it.
+
+  [x] 25. FOLLOWER LABEL ON LEADS + LIVE UPDATE WITHOUT REFRESH (Aug 13)
+            - When you assign a follower to a lead, a small avatar/label chip now
+              shows right next to the contact name in the Contacts table. It
+              shows the follower's profile image (logo) and initials if none.
+            - It updates IMMEDIATELY - no page refresh needed. When you go back
+              to the Contacts table after assigning a follower on the lead
+              detail page, the label is already there.
+            - HOW: new src/data/followersStore.ts (lightweight in-memory store,
+              same pattern as activityLog). The Contacts table subscribes to it
+              and the ContactInfoPanel writes to it when a follower is added or
+              removed, so the table reflects changes the moment they happen.
+            - The "Followers" column (if enabled via Manage Fields) also renders
+              the same avatar chips.
+            - Files: followersStore.ts (new), types.ts, utils.ts (mapApiContact),
+              tableFields.tsx, ContactsTable.tsx, ContactInfoPanel.tsx.
+
+  [x] 24. FIXED BLANK LEAD PAGE + LOGIN-AS/ACCOUNT MENU EVERYWHERE (Aug 13)
+            - ROOT-CAUSE BUG: opening a lead showed a BLANK page. It was
+              src/data/activityLog.ts -> useContactActivities(), which passed an
+              inline arrow as useSyncExternalStore's getSnapshot. That returned a
+              brand-new array every call, so React kept seeing the store change and
+              hit "Maximum update depth exceeded" (crash -> blank page). Fixed by
+              caching the snapshot reference (stable between notifications) so the
+              store only changes when the underlying activity data really changes.
+            - PROFILE MENU + NOTIFICATIONS BELL are now on EVERY page: the main
+              contacts TopBar, the Settings (MyStaff) header, and the Sites/Forms
+              header. Each page had its own static "AB" avatar before.
+            - Cleaned up: no duplicate dev servers; single vite on 5173.
+
+  [x] 23. LOGIN + ROLES/PERMISSIONS + NOTIFICATIONS (Aug 13)
+            - BRANDED LOGIN PAGE: src/components/LoginPage.tsx with Yadea branding
+              (orange #EB5F1B). Signs in via POST /auth and stores the session in
+              localStorage (evee_auth_session_v1). Public form pages stay
+              reachable without login.
+            - PASSWORD HASHING: staff passwords are stored as bcrypt hashes
+              (password_hash/password_verify in api/config.php). Legacy plain
+              passwords still verify. staff list/GET/login now strip the password
+              from every response (staff_payload()).
+            - ROLE HANDLING ON LOGIN: src/auth.tsx AuthContext + useAuth()
+              (Admin => all access; User => only enabled permissions).
+              Sidebar nav + Settings are filtered by permission category; routes
+              are guarded (contacts->contacts, sites->forms, settings->user_management)
+              with an "Access restricted" screen. Restricted users (?restrict_to=
+              <id>) only see contacts assigned to them or that they follow.
+            - NOTIFICATIONS: sql/auth_notifications.sql adds a notifications table.
+              API auto-notifies the new owner on lead assignment (assigned_to) and
+              the new follower on add_follower; POST /notifications lets the UI
+              notify @mentions and message sends. TopBar NotificationsBell polls
+              unread count every 30s, opens a dropdown, fires browser
+              Notification API alerts, and the server attempts a best-effort
+              email copy (send_notification_email).
+            - HOW TO LOGIN: yadeapakistan@gmail.com / FWAER@#$R (main Admin, "Yadea Admin").
+              New users created under Settings -> My Staff log in with the email
+              & password set at creation and only see what their permissions allow.
+              The Admin can use the profile menu -> "Login as" to view the app as
+              any created user and "Switch back" to their own account.
+              Run sql/auth_notifications.sql once first.
+            - typecheck + build PASSED; all endpoints tested via HTTP.
+
+RECENT WORK (Aug 10, 2026)
+-----------------------
+  [x] 22. Countries + searchable dropdowns + opportunity fields + editor/note upgrades + Rentals (Aug 10)
+            - Country placeholder in Add Company drawer now reads "Please input" (matching
+              all other fields) and is a searchable combobox over the FULL country list.
+            - All-country list (data/countries.ts) expanded to 206 entries incl. Kosovo,
+              Western Sahara, Hong Kong, Macau, Puerto Rico, Greenland, American Samoa,
+              Turks & Caicos, US Virgin Islands, Falkland Islands, etc. — used by the
+              Add Company drawer. Phone dial list (data/formOptions.ts) has 200+ countries.
+            - AddOpportunityModal: 3 new fields -> Source (text), Expected Close Date
+              (date), Tags (searchable multi-select: follow-up/high priority/warm lead).
+              Saved via API to opportunities.source / expected_close_date / tags.
+            - Task/Note rich-text editor fixed: preserves selection before toolbar
+              commands, robust link insertion, syncs innerHTML (formatting/lists/links
+              survive save). Notes render content as HTML.
+            - Add Note drawer: light color swatches (8), attachments (multi-file chips),
+              "Associate to" (shared with tasks). Notes panel renders color background,
+              attachment chips, and associated_to. Columns added to notes table.
+            - Appointments Add menu: "Blocked Slot" -> "Rentals" (key icon) -> books a
+              "Rented" appointment into Past Appointments.
+            - IMPORTANT FIX: the running Vite dev server was serving STALE cached modules
+              (old code). Restarted it so all the above actually shows in the browser.
+              typecheck + build PASSED; dev server verified to serve newest sources.
+
+  [x] 21. Actions tab rebuilt as ActionsTab.tsx (Aug 10)
+            - New component with 3 independent accordions:
+              - Opportunities (header + + Add / chevron; "No Opportunity Found"
+                + Create new / Link existing buttons)
+              - Workflows (Active workflows + circular blue + button;
+                Past workflows with "No past workflows" subtext)
+              - Client portal (Offers + Community groups searchable select inputs)
+              - Card footer: Created by: Form (blue link), Created on (PKT),
+                full-width "Audit logs" button with external-link icon
+            - Typed props: onCreateOpportunity / onLinkExisting /
+              onAuditLogsClick / onNotify; accordion state per section
+            - ContactInfoPanel Actions subtab now renders ActionsTab; the
+              shared Created-by footer shows only for All fields / DND tabs
+              (no duplication). typecheck + build PASSED
+  [x] 20. Smart list fields + row hover actions (Aug 10)
+            - Smart List drawer "Fields" dropdown now uses the same field set
+              as Manage fields (TABLE_FILTER_GROUPS from src/data/tableFields.tsx:
+              Contact / General Info / Additional Info / Form / Contact activity)
+            - Contacts table Contact-name column: hovering a row reveals a
+              3-dots (:::) menu in the right corner with:
+              - Book appointment -> opens BookAppointmentModal (creates
+                appointment via API for that contact)
+              - Create opportunity -> opens AddOpportunityModal (creates
+                opportunity via API)
+              - Send review request -> toast confirmation
+              - Delete Contact -> api.deleteContact + removes from list
+            - typecheck + build PASSED
+  [x] 19. Manage Fields drawer + Filters/Sort drawers (Aug 10)
+            - Toolbar "Manage fields" now opens a right slide-in drawer
+              (ManageFieldsDrawer):
+              - Header "Manage fields" + search bar ("Search fields")
+              - "Fields in table": active columns with checkboxes + drag
+                handles; Contact name locked (uncheckable); drag-and-drop
+                reorders the column sequence
+              - "Add fields": categorized accordions (Contact, General Info,
+                Additional Info, Form | Auto Dealer Contact Us, Contact
+                activity); checking a field instantly moves it into the table
+                list, unchecking removes it back to its group
+              - Real-time search filters both sections
+              - Footer: + Add custom field / Cancel / Apply
+              - Apply persists column order to localStorage
+              (evee_table_fields_v1) and updates ContactsTable columns
+            - Toolbar "Filters" -> TableFilterDrawer (right window, grouped
+              filter fields, searchable, Apply stores selection + badge)
+            - Toolbar "Sort" -> TableSortDrawer (right window, sortable
+              columns, Apply re-sorts the visible list client-side + badge)
+            - ContactsTable now renders columns dynamically from visibleFields
+              (src/data/tableFields.tsx); Contact type gained contactType +
+              updatedPkt + raw sort keys
+            - typecheck + build PASSED
+  [x] 18. Smart lists: add + remove + builder drawer (Aug 10)
+            - "Add Smart List" tab now opens a slide-in drawer (SmartListDrawer)
+              that slides in from the right (eveeSlideLeft) with:
+              - Smart list name field
+              - Filters dropdown (all HighLevel filter categories:
+                Contact information, DND, Contact activity, Opportunity
+                information, Client portal, Attribution, Additional Info,
+                Form | Auto Dealer Contact Us) - searchable, group-collapsible,
+                multi-select checkboxes + Clear all
+              - Sort by dropdown (all sortable columns) - single select
+              - Fields dropdown (expandable main field groups) - multi-select
+            - Saving creates the smart list, switches to it, persists to
+              localStorage (evee_smart_lists_v1); built-ins All/Leads remain
+            - Custom list tabs show a hover X to remove; removing the active
+              list falls back to All
+            - SmartListTabs now takes customLists/onAdd/onRemove props;
+              src/data/smartListOptions.ts holds filter/sort option data
+            - typecheck + build PASSED
+  [x] 17. Wired RightSidebarDrawers.tsx into RightSidebar (Aug 10)
+            - New drawer components were written but never imported (no visible
+              change). Now wired in:
+            - Associations panel -> AssociationsDrawer (Companies list w/ count,
+              remove association, Create new / Link existing)
+            - "Add new Company" slide-over drawer (AddCompanyDrawer) opens from
+              the Associations panel + Add
+            - Tasks panel -> TasksDrawer (search by title, delete, empty state)
+            - Notes panel -> NotesDrawer (search notes, delete, empty state)
+            - Create Task / Add Note slide-over drawer (CreateTaskNoteDrawer):
+              title, rich-text description toolbar, due date/time (tasks),
+              recurring toggle, assignee, associated contact chip
+            - Replaced window.prompt() add-task/add-note flows; add/delete now
+              hit the API (createTask/createNote/deleteTask/deleteNote)
+            - Added @keyframes eveeSlideLeft to index.css for drawer slide-in
+            - Removed now-unused states (taskSearch/taskMenuId/companyMenu) +
+              unused icon imports; typecheck + build PASSED-
+  [x] 11. Lead detail page (click row -> 3-panel workspace: left ContactInfo,
+           center conversation, right dock). LeadDetailPage.tsx + ContactInfoPanel.tsx
+           (All fields/DND/Actions subtabs + searchable accordions) + RightSidebar.tsx
+           (9 dock panels: Activity, Associations, Opportunities, Tasks, Notes,
+           Appointments, Documents, Payments, AI)
+  [x] 12. sql/contact_related.sql: opportunities/tasks/notes/appointments tables
+           (FK -> contacts, cascade delete) + API sub-resources
+           (GET/POST /contacts/{id}/..., DELETE /{resource}/{id})
+  [x] 13. Appointments: Add menu -> Meetings (opens BookAppointmentModal) / Blocked
+           Slot (prompt); creates DB rows shown under Past tab
+  [x] 14. Sidebar nav functional: "Sites" -> FormsDashboard.tsx (full HighLevel
+           Forms page: list + search + Create modal + form editor w/ element drawer,
+           canvas, field settings, device switch, live preview, save/delete, toast);
+           "Contacts" returns to CRM; other nav items toast "coming soon"
+  [x] 15. Form editor upgraded to v2 (per new HighLevel HTML):
+           - Full 8-category element catalog (Personal Info, Submit, Payments,
+             Address, Text, Choice Elements, Customized, Other Elements)
+           - Drag & drop: sidebar -> canvas + canvas reorder + drop-target insert
+           - 25+ field renderers (dropdowns, radio, html, bot protection, T&C,
+             image, file upload, date picker, signature, sell products, etc.)
+           - Empty-canvas drop helper, drag-over highlight, "Add Elements" toggle
+           - Inspector: Field Label / Placeholder Text (typed) / Required / Remove
+           - Editor header: 4 tabs (Edit/Settings/Submissions/Notifications),
+             desktop/tablet switch, Preview (simplified submit), Save
+           - Create modal simplified + responsive; seed Form 0 has 5 fields
+  [x] 16. Lead page composer upgraded: SMS label is now a dropdown (WhatsApp/SMS/Email)
+           - WhatsApp -> "WhatsApp Not Connected" + Connect WhatsApp button
+           - Email -> inline email editor (To:, Subject, format toolbar bold/italic/
+             underline/lists/link/image/emoji, contentEditable body, attachments, Send)
+           - SMS -> keeps Purchase Now; no new windows
+
+HOW LEADS ARE FOUND
+-------------------
+  - DB view v_leads  = contacts where is_lead=1 OR contact_type='Lead'
+                       OR tagged 'warm lead' / 'hot lead' / 'cold lead'
+  - UI "Leads" tab   -> GET /api/leads (searchable by name/phone/email/tag)
+  - SQL quick find   -> SELECT * FROM v_leads WHERE name LIKE '%term%' OR tags LIKE '%term%';
+
+POTENTIAL NEXT STEPS (ask user before implementing)
+---------------------------------------------------
+  a) Edit contact (PUT) + row detail drawer
+  b) Filter dropdown (by tag) + Sort dropdown wired to API (?tag=&sort=)
+  c) Pagination wiring (LIMIT/OFFSET via ?page=&per_page=)
+  d) Tag manager UI (add/rename/color tags)
+  e) Duplicate detection using UNIQUE phone/email (409 handling UI)
+  f) Auth for the API
+
+HOW TO RESUME
+-------------
+  1. Start XAMPP Apache + MySQL
+  2. (First time only) run sql/schema.sql then sql/seed.sql
+  3. cd Evee && npm start  -> http://localhost:5173
+  4. API: http://localhost/Evee/api/index.php/...
+  5. Ask the user before adding any new functionality.

@@ -1,0 +1,335 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #1e2433;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+/* Checkbox Styling */
+input[type='checkbox'] {
+  border-radius: 4px;
+  border-color: #cbd5e1;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Row checkboxes inside tables: consistent size + brand accent */
+input.row-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: #2563eb;
+  border-radius: 4px;
+}
+
+/* Visible keyboard focus on interactive elements */
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+
+/* Nicer text selection */
+::selection {
+  background: #bfdbfe;
+  color: #1e3a8a;
+}
+
+/* Transition Effects */
+.nav-item {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.custom-horizontal-scrollbar::-webkit-scrollbar {
+  height: 12px;
+}
+.custom-horizontal-scrollbar::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 6px;
+}
+.custom-horizontal-scrollbar::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 6px;
+}
+
+/* Hide scrollbars for smooth tab navigation on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Popup entrance animation for rich text editor dialogs */
+@keyframes eveePop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-pop {
+  animation: eveePop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Bulk actions toolbar slide-in */
+@keyframes eveeBulkBar {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.evee-bulkbar {
+  animation: eveeBulkBar 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Email composer contentEditable placeholder */
+.composer-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+}
+.composer-editor:focus {
+  border-color: #3b82f6;
+}
+
+/* Rich text editor rendered content */
+.composer-editor h1,
+.composer-editor h2,
+.composer-editor h3,
+.composer-editor h4,
+.composer-editor h5,
+.composer-editor h6 {
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0.4em 0 0.2em;
+}
+.composer-editor h1 { font-size: 2em; }
+.composer-editor h2 { font-size: 1.5em; }
+.composer-editor h3 { font-size: 1.25em; }
+.composer-editor h4 { font-size: 1.1em; }
+.composer-editor h5 { font-size: 1em; }
+.composer-editor h6 { font-size: 0.9em; }
+.composer-editor blockquote {
+  border-left: 3px solid #cbd5e1;
+  margin: 0.5em 0;
+  padding: 0.25em 0.75em;
+  color: #475569;
+}
+.composer-editor pre,
+.composer-editor pre code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.composer-editor pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 0.6em 0.8em;
+  overflow-x: auto;
+  font-size: 0.85em;
+  white-space: pre-wrap;
+}
+.composer-editor .rte-code-block {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 0.6em 0.8em;
+  overflow-x: auto;
+  font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+}
+.composer-editor a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+.composer-editor img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+/* ===== Evee Forms: smooth animations ===== */
+@keyframes eveeFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes eveeFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes eveeGrow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes eveePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes eveeSlideBar {
+  from {
+    height: 0;
+  }
+}
+@keyframes eveeSlideLeft {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes eveeSpinSlow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.evee-fade-up {
+  animation: eveeFadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.evee-fade-in {
+  animation: eveeFadeIn 0.4s ease both;
+}
+.evee-pop {
+  animation: eveePop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.evee-bar {
+  transform-origin: bottom;
+  animation: eveeGrow 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.evee-delay-1 {
+  animation-delay: 0.06s;
+}
+.evee-delay-2 {
+  animation-delay: 0.12s;
+}
+.evee-delay-3 {
+  animation-delay: 0.18s;
+}
+.evee-delay-4 {
+  animation-delay: 0.24s;
+}
+.evee-delay-5 {
+  animation-delay: 0.3s;
+}
+.evee-delay-6 {
+  animation-delay: 0.36s;
+}
+.evee-delay-7 {
+  animation-delay: 0.42s;
+}
+.evee-card-hover {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.evee-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -12px rgba(15, 23, 42, 0.22);
+}
+.evee-bar-glow:hover {
+  filter: brightness(1.08) drop-shadow(0 6px 10px rgba(59, 130, 246, 0.35));
+}
+.evee-gradient-text {
+  background: linear-gradient(120deg, #2563eb, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.evee-tab-pill {
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===== Dashboard: entrance + skeleton animations ===== */
+@keyframes dashRise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.dash-in {
+  animation: dashRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes dashShimmer {
+  0% {
+    background-position: -500px 0;
+  }
+  100% {
+    background-position: 500px 0;
+  }
+}
+.dash-skeleton {
+  background: linear-gradient(90deg, #e8edf4 25%, #f6f8fb 50%, #e8edf4 75%);
+  background-size: 1000px 100%;
+  animation: dashShimmer 1.5s infinite linear;
+  border-radius: 0.75rem;
+}
+
+@keyframes dashPulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+.dash-live-dot {
+  animation: dashPulseDot 1.6s ease-in-out infinite;
+}

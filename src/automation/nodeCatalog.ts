@@ -1,0 +1,347 @@
+import {
+  FaWpforms,
+  FaUserPlus,
+  FaTag,
+  FaCalendarCheck,
+  FaEnvelopeOpenText,
+  FaClock,
+  FaLink,
+  FaEnvelope,
+  FaCommentSms,
+  FaWhatsapp,
+  FaListCheck,
+  FaChartLine,
+  FaUserPen,
+  FaCalendarPlus,
+  FaHourglassHalf,
+  FaCodeBranch,
+  FaRobot,
+  FaBullhorn,
+  FaPhone,
+  FaRegCreditCard,
+} from 'react-icons/fa6';
+import type { NodeCatalogCategory, NodeTypeDef } from './types';
+
+const T = (d: Omit<NodeTypeDef, 'inputs' | 'outputs'> & { inputs?: number; outputs?: number }): NodeTypeDef => ({
+  inputs: d.kind === 'trigger' ? 0 : d.inputs ?? 1,
+  outputs: 1,
+  ...d,
+});
+
+export const NODE_TYPES: Record<string, NodeTypeDef> = {
+  'form-submitted': T({
+    key: 'form-submitted',
+    label: 'Form Submitted',
+    category: 'Triggers',
+    kind: 'trigger',
+    icon: FaWpforms,
+    color: '#10b981',
+    defaultName: 'Form Submitted',
+    fields: [
+      { key: 'form', label: 'Form', type: 'select', options: ['Contact Form #1', 'Test Drive Request', 'Quote Request'], placeholder: 'Select a form' },
+      { key: 'note', label: 'Note', type: 'text', placeholder: 'Optional note' },
+    ],
+    defaults: { form: 'Contact Form #1', note: '' },
+  }),
+  'contact-created': T({
+    key: 'contact-created',
+    label: 'Contact Created',
+    category: 'Triggers',
+    kind: 'trigger',
+    icon: FaUserPlus,
+    color: '#3b82f6',
+    defaultName: 'Contact Created',
+    fields: [{ key: 'note', label: 'Note', type: 'text', placeholder: 'Optional note' }],
+    defaults: { note: '' },
+  }),
+  'tag-added': T({
+    key: 'tag-added',
+    label: 'Tag Added',
+    category: 'Triggers',
+    kind: 'trigger',
+    icon: FaTag,
+    color: '#8b5cf6',
+    defaultName: 'Tag Added',
+    fields: [
+      { key: 'tag', label: 'Tag', type: 'text', placeholder: 'e.g. New Lead' },
+      { key: 'note', label: 'Note', type: 'text', placeholder: 'Optional note' },
+    ],
+    defaults: { tag: 'New Lead', note: '' },
+  }),
+  'appointment-booked': T({
+    key: 'appointment-booked',
+    label: 'Appointment Booked',
+    category: 'Triggers',
+    kind: 'trigger',
+    icon: FaCalendarCheck,
+    color: '#f59e0b',
+    defaultName: 'Appointment Booked',
+    fields: [{ key: 'note', label: 'Note', type: 'text', placeholder: 'Optional note' }],
+    defaults: { note: '' },
+  }),
+  'incoming-email': T({
+    key: 'incoming-email',
+    label: 'Incoming Email',
+    category: 'Triggers',
+    kind: 'trigger',
+    icon: FaEnvelopeOpenText,
+    color: '#ec4899',
+    defaultName: 'Incoming Email',
+    fields: [{ key: 'note', label: 'Note', type: 'text', placeholder: 'Optional note' }],
+    defaults: { note: '' },
+  }),
+  'incoming-call': T({
+    key: 'incoming-call',
+    label: 'Incoming Call',
+    category: 'Triggers',
+    kind: 'trigger',
+    icon: FaPhone,
+    color: '#22c55e',
+    defaultName: 'Incoming Call',
+    fields: [{ key: 'note', label: 'Note', type: 'text', placeholder: 'Optional note' }],
+    defaults: { note: '' },
+  }),
+  'schedule': T({
+    key: 'schedule',
+    label: 'Schedule',
+    category: 'Triggers',
+    kind: 'trigger',
+    icon: FaClock,
+    color: '#64748b',
+    defaultName: 'Schedule',
+    fields: [
+      { key: 'frequency', label: 'Frequency', type: 'select', options: ['Hourly', 'Daily', 'Weekly', 'Monthly'], placeholder: 'Frequency' },
+      { key: 'time', label: 'Time (24h)', type: 'text', placeholder: 'e.g. 09:00' },
+    ],
+    defaults: { frequency: 'Daily', time: '09:00' },
+  }),
+  'webhook': T({
+    key: 'webhook',
+    label: 'Webhook',
+    category: 'Triggers',
+    kind: 'trigger',
+    icon: FaLink,
+    color: '#06b6d4',
+    defaultName: 'Webhook',
+    fields: [{ key: 'url', label: 'URL', type: 'text', placeholder: 'https://...' }],
+    defaults: { url: 'https://api.example.com/hook' },
+  }),
+
+  'send-email': T({
+    key: 'send-email',
+    label: 'Send Email',
+    category: 'Messaging',
+    kind: 'action',
+    icon: FaEnvelope,
+    color: '#ec4899',
+    defaultName: 'Send Email',
+    fields: [
+      { key: 'to', label: 'To', type: 'text', placeholder: 'recipient@example.com' },
+      { key: 'subject', label: 'Subject', type: 'text', placeholder: 'Email subject' },
+      { key: 'body', label: 'Body', type: 'textarea', placeholder: 'Write your message...' },
+    ],
+    defaults: { to: '', subject: 'Welcome!', body: 'Hi {{contact.name}}, welcome to our community!' },
+  }),
+  'send-sms': T({
+    key: 'send-sms',
+    label: 'Send SMS',
+    category: 'Messaging',
+    kind: 'action',
+    icon: FaCommentSms,
+    color: '#22c55e',
+    defaultName: 'Send SMS',
+    fields: [
+      { key: 'to', label: 'To', type: 'text', placeholder: '+1 (555) 000-0000' },
+      { key: 'message', label: 'Message', type: 'textarea', placeholder: 'SMS body' },
+    ],
+    defaults: { to: '', message: 'Hi {{contact.name}}, this is a message from us!' },
+  }),
+  'send-whatsapp': T({
+    key: 'send-whatsapp',
+    label: 'Send WhatsApp',
+    category: 'Messaging',
+    kind: 'action',
+    icon: FaWhatsapp,
+    color: '#25d366',
+    defaultName: 'Send WhatsApp',
+    fields: [
+      { key: 'to', label: 'To', type: 'text', placeholder: '+1 (555) 000-0000' },
+      { key: 'message', label: 'Message', type: 'textarea', placeholder: 'WhatsApp message' },
+    ],
+    defaults: { to: '', message: 'Hi {{contact.name}}!' },
+  }),
+
+  'add-tag': T({
+    key: 'add-tag',
+    label: 'Add Tag',
+    category: 'CRM',
+    kind: 'action',
+    icon: FaTag,
+    color: '#8b5cf6',
+    defaultName: 'Add Tag',
+    fields: [{ key: 'tag', label: 'Tag', type: 'text', placeholder: 'e.g. VIP' }],
+    defaults: { tag: 'VIP' },
+  }),
+  'remove-tag': T({
+    key: 'remove-tag',
+    label: 'Remove Tag',
+    category: 'CRM',
+    kind: 'action',
+    icon: FaTag,
+    color: '#8b5cf6',
+    defaultName: 'Remove Tag',
+    fields: [{ key: 'tag', label: 'Tag', type: 'text', placeholder: 'e.g. VIP' }],
+    defaults: { tag: 'VIP' },
+  }),
+  'create-task': T({
+    key: 'create-task',
+    label: 'Create Task',
+    category: 'CRM',
+    kind: 'action',
+    icon: FaListCheck,
+    color: '#6366f1',
+    defaultName: 'Create Task',
+    fields: [
+      { key: 'title', label: 'Title', type: 'text', placeholder: 'Task title' },
+      { key: 'assignee', label: 'Assignee', type: 'text', placeholder: 'Staff name' },
+    ],
+    defaults: { title: 'Follow up with lead', assignee: '' },
+  }),
+  'create-opportunity': T({
+    key: 'create-opportunity',
+    label: 'Create Opportunity',
+    category: 'CRM',
+    kind: 'action',
+    icon: FaChartLine,
+    color: '#f97316',
+    defaultName: 'Create Opportunity',
+    fields: [
+      { key: 'name', label: 'Name', type: 'text', placeholder: 'Opportunity name' },
+      { key: 'stage', label: 'Stage', type: 'select', options: ['New', 'Qualified', 'Proposal', 'Won', 'Lost'] },
+    ],
+    defaults: { name: '', stage: 'New' },
+  }),
+  'update-contact': T({
+    key: 'update-contact',
+    label: 'Update Contact',
+    category: 'CRM',
+    kind: 'action',
+    icon: FaUserPen,
+    color: '#3b82f6',
+    defaultName: 'Update Contact',
+    fields: [
+      { key: 'field', label: 'Field', type: 'select', options: ['Phone', 'Email', 'Business Name', 'Tags'] },
+      { key: 'value', label: 'Value', type: 'text', placeholder: 'New value' },
+    ],
+    defaults: { field: 'Phone', value: '' },
+  }),
+  'book-appointment': T({
+    key: 'book-appointment',
+    label: 'Book Appointment',
+    category: 'CRM',
+    kind: 'action',
+    icon: FaCalendarPlus,
+    color: '#f59e0b',
+    defaultName: 'Book Appointment',
+    fields: [
+      { key: 'title', label: 'Title', type: 'text', placeholder: 'Meeting title' },
+      { key: 'days', label: 'Days from now', type: 'number', placeholder: '3' },
+    ],
+    defaults: { title: 'Follow-up call', days: '3' },
+  }),
+  'collect-payment': T({
+    key: 'collect-payment',
+    label: 'Collect Payment',
+    category: 'CRM',
+    kind: 'action',
+    icon: FaRegCreditCard,
+    color: '#10b981',
+    defaultName: 'Collect Payment',
+    fields: [
+      { key: 'amount', label: 'Amount (USD)', type: 'number', placeholder: '100' },
+      { key: 'item', label: 'Item', type: 'text', placeholder: 'Booking deposit' },
+    ],
+    defaults: { amount: '100', item: 'Booking deposit' },
+  }),
+
+  'delay': T({
+    key: 'delay',
+    label: 'Wait / Delay',
+    category: 'Logic',
+    kind: 'logic',
+    icon: FaHourglassHalf,
+    color: '#64748b',
+    defaultName: 'Wait',
+    fields: [
+      { key: 'amount', label: 'Amount', type: 'number', placeholder: '1' },
+      { key: 'unit', label: 'Unit', type: 'select', options: ['Minutes', 'Hours', 'Days'] },
+    ],
+    defaults: { amount: '1', unit: 'Hours' },
+  }),
+  'condition': T({
+    key: 'condition',
+    label: 'Condition',
+    category: 'Logic',
+    kind: 'logic',
+    icon: FaCodeBranch,
+    color: '#3b82f6',
+    defaultName: 'If / Then',
+    outputs: 2,
+    fields: [
+      { key: 'field', label: 'Field', type: 'select', options: ['Tag', 'Email', 'Phone', 'Business Name'] },
+      { key: 'operator', label: 'Operator', type: 'select', options: ['Contains', 'Is', 'Is Not', 'Is Empty'] },
+      { key: 'value', label: 'Value', type: 'text', placeholder: 'Compare value' },
+    ],
+    defaults: { field: 'Tag', operator: 'Contains', value: 'VIP' },
+  }),
+  'ai-agent': T({
+    key: 'ai-agent',
+    label: 'AI Agent',
+    category: 'Logic',
+    kind: 'action',
+    icon: FaRobot,
+    color: '#7c3aed',
+    defaultName: 'AI Agent',
+    fields: [
+      { key: 'prompt', label: 'Prompt', type: 'textarea', placeholder: 'System prompt for the agent' },
+      { key: 'model', label: 'Model', type: 'select', options: ['GPT-4o', 'GPT-4o mini', 'Claude 3.5 Sonnet', 'Gemini Pro'] },
+    ],
+    defaults: { prompt: 'You are a helpful sales assistant...', model: 'GPT-4o' },
+  }),
+  'add-campaign': T({
+    key: 'add-campaign',
+    label: 'Add to Campaign',
+    category: 'Messaging',
+    kind: 'action',
+    icon: FaBullhorn,
+    color: '#ef4444',
+    defaultName: 'Add to Campaign',
+    fields: [
+      { key: 'campaign', label: 'Campaign', type: 'select', options: ['Welcome Automation', 'New Lead Nurture', 'Abandoned Booking Follow-up'] },
+    ],
+    defaults: { campaign: 'Welcome Automation' },
+  }),
+};
+
+export const NODE_CATEGORIES: NodeCatalogCategory[] = [
+  { name: 'Triggers', items: ['form-submitted', 'contact-created', 'tag-added', 'appointment-booked', 'incoming-email', 'incoming-call', 'schedule', 'webhook'].map((k) => NODE_TYPES[k]) },
+  { name: 'Messaging', items: ['send-email', 'send-sms', 'send-whatsapp', 'add-campaign'].map((k) => NODE_TYPES[k]) },
+  { name: 'CRM', items: ['add-tag', 'remove-tag', 'create-task', 'create-opportunity', 'update-contact', 'book-appointment', 'collect-payment'].map((k) => NODE_TYPES[k]) },
+  { name: 'Logic', items: ['delay', 'condition', 'ai-agent'].map((k) => NODE_TYPES[k]) },
+];
+
+export function getNodeType(key: string): NodeTypeDef {
+  return NODE_TYPES[key] ?? NODE_TYPES['send-email'];
+}
+
+export function categoryOf(type: string): string {
+  return getNodeType(type).category;
+}
+
+export function isTrigger(type: string): boolean {
+  return getNodeType(type).kind === 'trigger';
+}
+
+export function isLogic(type: string): boolean {
+  return getNodeType(type).kind === 'logic';
+}

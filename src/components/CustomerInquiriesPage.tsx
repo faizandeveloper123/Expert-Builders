@@ -1,0 +1,589 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
+import {
+  FaDownload,
+  FaHeadset,
+  FaLink,
+  FaPaperPlane,
+  FaRegTrashCan,
+  FaUserCheck,
+  FaUserPlus,
+  FaXmark,
+} from 'react-icons/fa6';
+import {
+  api,
+  type ApiPortalSubmission,
+  type ApiStaffUser,
+} from '../api';
+import { useAuth } from '../auth';
+import { sendSmtpEmail } from '../services/smtp';
+import AnchoredPopover from './AnchoredPopover';
+
+interface PageProps {
+  onNotify: (msg: string) => void;
+}
+
+const PROBLEMS = [
+  'Return',
+  'Replace',
+  'Product Parts',
+  'Product Related Questions',
+  'Battery & Charging Issues',
+  'Motor & Acceleration Performance',
+  'Display Panel & Electronics',
+  'Brake System & Suspension',
+  'Keyless / Remote Control Unit',
+  'Warranty & Service Registration',
+  'Others',
+];
+
+const inputCls =
+  'w-full bg-white border border-slate-300 focus:border-yadea-orange rounded-lg px-4 py-3 text-sm text-slate-800 outline-none transition placeholder-slate-400 shadow-sm';
+
+function fmtDate(v: string | null): string {
+  if (!v) return '-';
+  const d = new Date(v.includes('T') ? v : v.replace(' ', 'T'));
+  return Number.isNaN(d.getTime()) ? v : d.toLocaleString();
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function CustomerInquiriesPage({ onNotify }: PageProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.user_type === 'Admin';
+
+  const [form, setForm] = useState({
+    chassisNumber: '',
+    orderNumber: '',
+    problemCategory: '',
+    custName: '',
+    custEmail: '',
+    custPhone: '',
+    custReason: '',
+  });
+  const [consent, setConsent] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [rows, setRows] = useState<ApiPortalSubmission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'assigned'>('all');
+  const [dealers, setDealers] = useState<ApiStaffUser[]>([]);
+  const [assignPick, setAssignPick] = useState<Record<number, number>>({});
+  const [openAssign, setOpenAssign] = useState<number | null>(null);
+  const assignBtnRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+  const [viewing, setViewing] = useState<ApiPortalSubmission | null>(null);
+
+  const setField =
+    (key: keyof typeof form) =>
+    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  // Non-admins only ever receive inquiries assigned to them.
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { type: 'inquiry' as const };
+      const res = await api.listPortalSubmissions(
+        isAdmin ? params : { type: 'inquiry', restrict_to: user?.id }
+      );
+      setRows(res.data);
+    } catch (err) {
+      onNotify(`Failed to load inquiries: ${(err as Error).message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAdmin, user?.id, onNotify]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    api
+      .listStaff()
+      .then((res) => setDealers(res.data.filter((s) => s.user_type === 'Dealer')))
+      .catch(() => undefined);
+  }, [isAdmin]);
+
+  const submit = async () => {
+    if (!form.chassisNumber.trim()) return onNotify('Chassis number is required');
+    if (!form.problemCategory) return onNotify('Please pick your problem');
+    if (!form.custName.trim()) return onNotify('Name is required');
+    if (!form.custEmail.trim()) return onNotify('Email is required');
+    if (!form.custPhone.trim()) return onNotify('Phone is required');
+    if (!form.custReason.trim()) return onNotify('Please tell us your reason');
+    if (!consent) return onNotify('Please accept the Privacy Policy first');
+
+    setSaving(true);
+    try {
+      const res = await api.createPortalSubmission({
+        type: 'inquiry',
+        name: form.custName.trim(),
+        email: form.custEmail.trim(),
+        phone: form.custPhone.trim(),
+        chassis_number: form.chassisNumber.trim(),
+        order_number: form.orderNumber.trim(),
+        problem_category: form.problemCategory,
+        reason: form.custReason.trim(),
+        created_by: user?.id ?? null,
+      });
+      onNotify('Support ticket submitted');
+
+      // Send confirmation email to submitter
+      const refCode = res.data?.code || '';
+      sendSmtpEmail({
+        to: [form.custEmail.trim()],
+        subject: `Support Ticket ${refCode} Received — Yadea Pakistan`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+          <h2 style="color:#12161a;">We've Received Your Support Ticket</h2>
+          <p>Dear ${form.custName.trim()},</p>
+          <p>Thank you for reaching out to Yadea Pakistan. Your support ticket has been successfully submitted.</p>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;">
+            <p style="margin:4px 0;"><strong>Reference Code:</strong> ${refCode}</p>
+            <p style="margin:4px 0;"><strong>Problem Category:</strong> ${form.problemCategory}</p>
+            <p style="margin:4px 0;"><strong>Chassis Number:</strong> ${form.chassisNumber.trim()}</p>
+          </div>
+          <p>Our team will review your ticket and respond within 48 business hours.</p>
+          <p style="color:#64748b;font-size:12px;margin-top:24px;">Yadea Pakistan — Driving Sustainable Mobility Forward</p>
+        </div>`,
+      }).catch(() => undefined);
+      setForm({ chassisNumber: '', orderNumber: '', problemCategory: '', custName: '', custEmail: '', custPhone: '', custReason: '' });
+      setConsent(false);
+      await load();
+    } catch (err) {
+      onNotify(`Submit failed: ${(err as Error).message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const assign = async (row: ApiPortalSubmission) => {
+    const dealerId = assignPick[row.id];
+    if (!dealerId) return onNotify('Pick a dealer first');
+    try {
+      await api.assignPortalSubmission(row.id, dealerId);
+      const dealer = dealers.find((d) => d.id === dealerId);
+      const name = dealer?.full_name ?? 'dealer';
+      onNotify(`Inquiry ${row.code} assigned to ${name} — dealer notified`);
+
+      // Send assignment notification email to dealer
+      if (dealer?.email) {
+        sendSmtpEmail({
+          to: [dealer.email],
+          subject: `New Inquiry Assigned to You — ${row.code}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+            <h2 style="color:#12161a;">You've Been Assigned a New Inquiry</h2>
+            <p>Dear ${dealer.full_name},</p>
+            <p>A new customer inquiry has been assigned to you. Please review and respond within 48 business hours.</p>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;">
+              <p style="margin:4px 0;"><strong>Reference Code:</strong> ${row.code}</p>
+              <p style="margin:4px 0;"><strong>Customer Name:</strong> ${row.name}</p>
+              <p style="margin:4px 0;"><strong>Email:</strong> ${row.email}</p>
+              <p style="margin:4px 0;"><strong>Phone:</strong> ${row.phone}</p>
+              <p style="margin:4px 0;"><strong>Problem Category:</strong> ${row.problem_category || 'N/A'}</p>
+              <p style="margin:4px 0;"><strong>Reason:</strong> ${row.reason || 'N/A'}</p>
+            </div>
+            <p>Please log in to the CRM to view the full details and take action.</p>
+            <p style="color:#64748b;font-size:12px;margin-top:24px;">Yadea Pakistan — Driving Sustainable Mobility Forward</p>
+          </div>`,
+        }).catch(() => undefined);
+      }
+
+      setAssignPick((prev) => ({ ...prev, [row.id]: 0 }));
+      setOpenAssign(null);
+      await load();
+    } catch (err) {
+      onNotify(`Assign failed: ${(err as Error).message}`);
+    }
+  };
+
+  const unassign = async (row: ApiPortalSubmission) => {
+    try {
+      await api.assignPortalSubmission(row.id, 0);
+      onNotify(`Assignment removed from ${row.code}`);
+      await load();
+    } catch (err) {
+      onNotify(`Unassign failed: ${(err as Error).message}`);
+    }
+  };
+
+  const removeRow = async (row: ApiPortalSubmission) => {
+    if (!window.confirm(`Delete inquiry ${row.code}?`)) return;
+    try {
+      await api.deletePortalSubmission(row.id);
+      onNotify(`Inquiry ${row.code} deleted`);
+      await load();
+    } catch (err) {
+      onNotify(`Delete failed: ${(err as Error).message}`);
+    }
+  };
+
+  const copyFormLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}#/inquiry-form`;
+    const ok = await copyText(url);
+    onNotify(ok ? 'Public form link copied — share it with anyone' : url);
+  };
+
+  const exportCsv = () => {
+    if (rows.length === 0) return onNotify('Nothing to export yet');
+    let csv = 'Code,Customer,Email,Phone,Chassis,Order,Problem,Status,Assigned To,Submitted\n';
+    rows.forEach((r) => {
+      csv += `"${r.code}","${r.name}","${r.email}","${r.phone}","${r.chassis_number}","${r.order_number}","${r.problem_category}","${r.status}","${r.assigned_to_name ?? ''}","${fmtDate(r.created_at)}"\n`;
+    });
+    const link = document.createElement('a');
+    link.href = `data:text/csv;charset=utf-8,${encodeURI(csv)}`;
+    link.download = 'yadea_customer_inquiries.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    onNotify('CSV exported');
+  };
+
+  const stats = useMemo(
+    () => ({
+      total: rows.length,
+      new: rows.filter((r) => r.status !== 'assigned').length,
+      assigned: rows.filter((r) => r.status === 'assigned').length,
+    }),
+    [rows]
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (statusFilter === 'new' && r.status === 'assigned') return false;
+      if (statusFilter === 'assigned' && r.status !== 'assigned') return false;
+      if (!q) return true;
+      return [r.code, r.name, r.email, r.phone, r.chassis_number, r.order_number, r.problem_category]
+        .join(' ')
+        .toLowerCase()
+        .includes(q);
+    });
+  }, [rows, search, statusFilter]);
+
+  return (
+    <div className="min-h-full bg-slate-100">
+      {/* Hero */}
+      <div
+        className="relative h-52 md:h-64 flex items-center justify-center text-center px-4"
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(18,22,25,0.55) 0%, rgba(18,22,25,0.85) 100%), url(\'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=1600&q=80\') center/cover no-repeat #12161a',
+        }}
+      >
+        <div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Customer Inquiries</h2>
+          <p className="text-slate-300 mt-2 text-sm font-light max-w-2xl mx-auto">
+            Product support tickets — assign them to the right dealer for a resolution within 48 business hours.
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-3 md:px-6 -mt-10 pb-10 relative z-10 space-y-6">
+        {/* Ticket form */}
+        <div className="bg-white rounded-2xl shadow-xl p-5 md:p-8 border border-slate-100">
+          <h3 className="text-xl font-bold text-slate-900 uppercase tracking-wide text-center mb-6">
+            Submit A Ticket
+          </h3>
+
+          <div className="space-y-4">
+            <input value={form.chassisNumber} onChange={setField('chassisNumber')} placeholder="Chassis Number *" className={inputCls} />
+            <input value={form.orderNumber} onChange={setField('orderNumber')} placeholder="Order ID / DO Number" className={inputCls} />
+            <select value={form.problemCategory} onChange={setField('problemCategory')} className={inputCls}>
+              <option value="" disabled>Pick Your Problem *</option>
+              {PROBLEMS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input value={form.custName} onChange={setField('custName')} placeholder="Name *" className={inputCls} />
+              <input type="email" value={form.custEmail} onChange={setField('custEmail')} placeholder="Email *" className={inputCls} />
+            </div>
+            <input value={form.custPhone} onChange={setField('custPhone')} placeholder="Phone *" className={inputCls} />
+            <textarea rows={4} value={form.custReason} onChange={setField('custReason')} placeholder="Tell Us Your Reason *" className={`${inputCls} resize-none`} />
+
+            <label className="flex items-start gap-2 pt-1 cursor-pointer">
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-yadea-orange cursor-pointer" />
+              <span className="text-xs text-slate-600 leading-relaxed">
+                I have read the Privacy Policy and accept the processing of data for the purposes indicated.
+              </span>
+            </label>
+
+            <div className="pt-2 flex justify-center">
+              <button
+                type="button"
+                onClick={() => void submit()}
+                disabled={saving}
+                className="w-full md:w-1/2 bg-yadea-orange hover:bg-yadea-dark text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition uppercase tracking-wider text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaPaperPlane className="text-xs" />
+                {saving ? 'Sending…' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            ['Total Inquiries', stats.total, 'bg-blue-100 text-blue-600'],
+            ['New (unassigned)', stats.new, 'bg-amber-100 text-amber-600'],
+            ['Assigned', stats.assigned, 'bg-emerald-100 text-emerald-600'],
+          ].map(([label, value, tone]) => (
+            <div key={String(label)} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-500 font-medium">{label}</span>
+                <div className="text-2xl font-black text-slate-800 mt-0.5">{value}</div>
+              </div>
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg ${tone}`}>
+                <FaHeadset />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Inquiries table */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5">
+              {(['all', 'new', 'assigned'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setStatusFilter(f)}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold capitalize transition ${
+                    statusFilter === f
+                      ? 'bg-slate-800 text-white'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search inquiries…"
+                className="px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-yadea-orange w-44"
+              />
+              <button
+                onClick={() => void copyFormLink()}
+                className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1.5"
+                title="Copy the public link for this form"
+              >
+                <FaLink className="text-[10px]" /> Copy Form Link
+              </button>
+              <button onClick={exportCsv} className="text-xs bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1.5">
+                <FaDownload className="text-[10px]" /> Export CSV
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-600">
+              <thead className="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3">Code</th>
+                  <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Problem</th>
+                  <th className="px-4 py-3">Chassis</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Loading…</td></tr>
+                ) : filtered.length === 0 ? (
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400 font-medium">No inquiries found.</td></tr>
+                ) : (
+                  filtered.map((r) => (
+                    <tr key={r.id} className="hover:bg-slate-50 transition align-top">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="font-mono font-bold text-yadea-dark">{r.code}</div>
+                        <div className="text-[10px] text-slate-400">{fmtDate(r.created_at)}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-slate-800">{r.name}</div>
+                        <div className="text-[11px] text-slate-500">{r.email}</div>
+                        <div className="text-[11px] text-slate-500">{r.phone}</div>
+                      </td>
+                      <td className="px-4 py-3 max-w-[160px]">
+                        <div className="font-semibold text-slate-700">{r.problem_category || '-'}</div>
+                        <div className="text-[11px] text-slate-500 line-clamp-2">{r.reason}</div>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-[11px]">
+                        <div>{r.chassis_number}</div>
+                        {r.order_number && <div className="text-slate-400">DO: {r.order_number}</div>}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {r.status === 'assigned' ? (
+                          <div className="space-y-1">
+                            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                              Assigned
+                            </span>
+                            <div className="flex items-center gap-1 text-[11px] text-slate-600">
+                              <FaUserCheck className="text-emerald-500 text-[9px]" />
+                              <span className="truncate max-w-[90px]">{r.assigned_to_name ?? '-'}</span>
+                              {isAdmin && (
+                                <button onClick={() => void unassign(r)} title="Remove assignment" className="text-slate-300 hover:text-red-500 transition">
+                                  <FaXmark className="text-[9px]" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-700 border-amber-200">
+                            New
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="relative inline-block text-left space-x-1.5">
+                          {isAdmin && (
+                            <button
+                              ref={(el) => {
+                                assignBtnRefs.current[r.id] = el;
+                              }}
+                              onClick={() => setOpenAssign((v) => (v === r.id ? null : r.id))}
+                              className={`text-[11px] font-bold px-2 py-1 rounded transition ${
+                                openAssign === r.id
+                                  ? 'bg-yadea-orange text-white'
+                                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
+                              }`}
+                              title="Assign to a dealer"
+                            >
+                              <FaUserPlus className="inline mr-1 text-[9px]" />
+                              Assign to
+                            </button>
+                          )}
+                          <button onClick={() => setViewing(r)} className="text-slate-600 hover:text-yadea-orange text-[11px] font-bold px-2 py-1 bg-slate-100 rounded hover:bg-orange-50 transition">
+                            View
+                          </button>
+                          {isAdmin && (
+                            <button onClick={() => void removeRow(r)} className="text-red-500 hover:text-red-700 text-[11px] px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition">
+                              <FaRegTrashCan />
+                            </button>
+                          )}
+
+                          <AnchoredPopover
+                            open={isAdmin && openAssign === r.id}
+                            anchorEl={assignBtnRefs.current[r.id] ?? null}
+                            onClose={() => setOpenAssign(null)}
+                            placement="bottom-end"
+                            width={224}
+                            className="bg-white border border-slate-200 rounded-lg shadow-2xl p-2.5 text-left"
+                          >
+                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
+                              Assign to dealer — {r.code}
+                            </p>
+                            <select
+                              value={assignPick[r.id] ?? 0}
+                              onChange={(e) => setAssignPick((prev) => ({ ...prev, [r.id]: Number(e.target.value) }))}
+                              className="w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-yadea-orange mb-2"
+                            >
+                              <option value={0}>Select dealer…</option>
+                              {dealers.map((d) => (
+                                <option key={d.id} value={d.id}>{d.full_name}</option>
+                              ))}
+                            </select>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => void assign(r)}
+                                className="flex-1 bg-yadea-orange hover:bg-yadea-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
+                              >
+                                Assign & Notify
+                              </button>
+                              {r.assigned_to && (
+                                <button
+                                  onClick={() => void unassign(r)}
+                                  className="flex-1 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-[11px] font-bold py-1.5 rounded-md transition"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          </AnchoredPopover>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {!isAdmin && (
+          <p className="text-[11px] text-slate-400 text-center -mt-2">
+            You are viewing inquiries assigned to you.
+          </p>
+        )}
+      </div>
+
+      {/* Details modal */}
+      {viewing && (
+        <div className="fixed inset-0 z-[80] bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center p-4 evee-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-pop">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-base">Inquiry {viewing.code}</h3>
+              <button onClick={() => setViewing(null)} className="text-slate-400 hover:text-slate-600 transition">
+                <FaXmark className="text-lg" />
+              </button>
+            </div>
+            <div className="p-5 space-y-1.5 text-xs max-h-[60vh] overflow-y-auto">
+              {(
+                [
+                  ['Customer', viewing.name],
+                  ['Email', viewing.email],
+                  ['Phone', viewing.phone],
+                  ['Chassis #', viewing.chassis_number],
+                  ['Order / DO', viewing.order_number],
+                  ['Problem', viewing.problem_category],
+                  ['Reason', viewing.reason],
+                  ['Status', viewing.status],
+                  ['Assigned To', viewing.assigned_to_name ?? '-'],
+                  ['Submitted', fmtDate(viewing.created_at)],
+                ] as const
+              ).map(([k, v]) => (
+                <div key={k} className="py-1 border-b border-slate-100">
+                  <div className="font-bold uppercase text-slate-400">{k}</div>
+                  <div className="text-slate-800 font-medium break-all whitespace-pre-wrap">{v || '-'}</div>
+                </div>
+              ))}
+            </div>
+            <div className="px-5 py-3 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setViewing(null)} className="bg-slate-800 text-white text-xs px-4 py-2 rounded-lg font-semibold hover:bg-slate-900 transition">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default CustomerInquiriesPage;
