@@ -1,4 +1,7 @@
 node_modules
+npm-debug.log*
+.npm-cache
+.npm
 dist
 .vite
 *.local
