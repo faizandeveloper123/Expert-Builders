@@ -1,6 +1,6 @@
 /**
  * Pakistan provinces & cities used by the portal forms (dealership
- * applications + customer inquiries). Curated list provided by Yadea.
+ * applications + customer inquiries). Curated list provided by Expert Builders.
  */
 
 export const PROVINCES = [

@@ -21,7 +21,7 @@ interface PageProps {
 }
 
 const inputCls =
-  'w-full bg-slate-50 border border-transparent focus:border-yadea-orange focus:bg-white rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder-slate-400';
+  'w-full bg-slate-50 border border-transparent focus:border-brand-blue focus:bg-white rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder-slate-400';
 const labelCls = 'block text-xs font-medium text-slate-600 mb-1';
 
 function fmtDate(v: string | null): string {
@@ -147,7 +147,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
       const refCode = res.data?.code || '';
       sendSmtpEmail({
         to: [form.email.trim()],
-        subject: `Dealership Application ${refCode} Received — Yadea Pakistan`,
+        subject: `Dealership Application ${refCode} Received — Expert Builders & Developers`,
         html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
           <h2 style="color:#12161a;">Thank You for Your Dealership Application</h2>
           <p>Dear ${form.salutation} ${form.firstName.trim()} ${form.lastName.trim()},</p>
@@ -159,7 +159,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
             <p style="margin:4px 0;"><strong>City:</strong> ${form.city || 'N/A'}</p>
           </div>
           <p>If you have any questions, please don't hesitate to reach out.</p>
-          <p style="color:#64748b;font-size:12px;margin-top:24px;">Yadea Pakistan — Driving Sustainable Mobility Forward</p>
+          <p style="color:#64748b;font-size:12px;margin-top:24px;">Expert Builders & Developers — Building Tomorrow, Delivering Today</p>
         </div>`,
       }).catch(() => undefined);
       setForm((prev) => ({
@@ -228,7 +228,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
     });
     const link = document.createElement('a');
     link.href = `data:text/csv;charset=utf-8,${encodeURI(csv)}`;
-    link.download = 'yadea_dealership_applications.csv';
+    link.download = 'expert_builders_dealership_applications.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -383,7 +383,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
             </div>
 
             <label className="flex items-start gap-2 pt-1 cursor-pointer">
-              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-yadea-orange cursor-pointer" />
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-brand-blue cursor-pointer" />
               <span className="text-xs text-slate-600 leading-relaxed">
                 I have read the Privacy Policy and accept the processing of data for the purposes indicated.
               </span>
@@ -394,7 +394,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                 type="button"
                 onClick={() => void submit()}
                 disabled={saving}
-                className="w-full md:w-1/2 bg-yadea-orange hover:bg-yadea-dark text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition uppercase tracking-wider text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full md:w-1/2 bg-brand-blue hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition uppercase tracking-wider text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FaPaperPlane className="text-xs" />
                 {saving ? 'Sending…' : 'Send'}
@@ -407,7 +407,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
             <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-              <FaStore className="text-yadea-orange" /> Received Applications
+              <FaStore className="text-brand-blue" /> Received Applications
               <span className="bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full">{rows.length}</span>
             </span>
             <div className="flex items-center gap-2">
@@ -415,7 +415,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search applications…"
-                className="px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-yadea-orange w-44"
+                className="px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-brand-blue w-44"
               />
               <button
                 onClick={() => void copyFormLink()}
@@ -450,7 +450,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                 ) : (
                   filtered.map((r) => (
                     <tr key={r.id} className="hover:bg-slate-50 transition">
-                      <td className="px-4 py-3 font-mono font-bold text-yadea-dark">{r.code}</td>
+                      <td className="px-4 py-3 font-mono font-bold text-brand-dark">{r.code}</td>
                       <td className="px-4 py-3">
                         <div className="font-semibold text-slate-800">{r.name}</div>
                         <div className="text-[11px] text-slate-500">{r.business_name}</div>
@@ -477,7 +477,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                               onClick={() => setOpenAssign((v) => (v === r.id ? null : r.id))}
                               className={`text-[11px] font-bold px-2 py-1 rounded transition ${
                                 openAssign === r.id
-                                  ? 'bg-yadea-orange text-white'
+                                  ? 'bg-brand-blue text-white'
                                   : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
                               }`}
                               title="Assign to a dealer"
@@ -486,7 +486,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                               Assign to
                             </button>
                           )}
-                          <button onClick={() => setViewing(r)} className="text-slate-600 hover:text-yadea-orange text-[11px] font-bold px-2 py-1 bg-slate-100 rounded hover:bg-orange-50 transition">
+                          <button onClick={() => setViewing(r)} className="text-slate-600 hover:text-brand-blue text-[11px] font-bold px-2 py-1 bg-slate-100 rounded hover:bg-orange-50 transition">
                             View
                           </button>
                           {isAdmin && (
@@ -509,7 +509,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                             <select
                               value={assignPick[r.id] ?? 0}
                               onChange={(e) => setAssignPick((prev) => ({ ...prev, [r.id]: Number(e.target.value) }))}
-                              className="w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-yadea-orange mb-2"
+                              className="w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-brand-blue mb-2"
                             >
                               <option value={0}>Select dealer…</option>
                               {dealers.map((d) => (
@@ -519,7 +519,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                             <div className="flex items-center gap-1.5">
                               <button
                                 onClick={() => void assign(r)}
-                                className="flex-1 bg-yadea-orange hover:bg-yadea-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
+                                className="flex-1 bg-brand-blue hover:bg-brand-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
                               >
                                 Assign & Notify
                               </button>

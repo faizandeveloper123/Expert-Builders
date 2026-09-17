@@ -10,7 +10,7 @@
  *   #/sites           -> Sites / Forms dashboard (standalone page)
  *   #/settings        -> Settings page (standalone page, own sidebar)
  *   #/dashboard       -> Dealer / Franchise dashboard (owner vs user views)
- *   #/invoices        -> Yadea Sales Tax Invoice generator
+ *   #/invoices        -> Expert Builders Sales Tax Invoice generator
  */
 
 export type Route =

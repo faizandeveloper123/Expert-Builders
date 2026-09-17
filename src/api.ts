@@ -479,12 +479,18 @@ export interface UpdateContactInput {
 /**
  * Same-origin API base, auto-detecting the app's sub-directory.
  * Derives the path from the current URL so it works regardless of the
- * deployment folder name (e.g. /Yadea/, /Yadea-Pakistan/, or root /).
+ * deployment folder name (e.g. /expert-builders/, /expert-builders-dev/, or root /).
  */
 function detectApiBases(): string[] {
   const path = window.location.pathname;
   const dir = path.substring(0, path.lastIndexOf('/') + 1);
-  const bases = [`${dir}api/index.php`, '/api/index.php'];
+  const bases = [
+    `${dir}api/index.php`,
+    '/api/index.php',
+    // Absolute fallback so the built APK (Capacitor local:// or http://localhost
+    // origin) can still reach the live API instead of a dead local path.
+    'https://hifimarketing.co/agency/api/index.php',
+  ];
   return [...new Set(bases)];
 }
 
@@ -493,6 +499,9 @@ export const API_BASE = (() => {
   const dir = path.substring(0, path.lastIndexOf('/') + 1);
   return `${dir}api/index.php`;
 })();
+
+/** Absolute live API base, used by the Capacitor APK when the local path resolves to a dead origin. */
+export const ABSOLUTE_API_BASE = 'https://hifimarketing.co/agency/api/index.php';
 
 /** Direct same-origin URL for viewing (inline) or downloading a stored document. */
 export function documentFileUrl(id: number, download = false): string {

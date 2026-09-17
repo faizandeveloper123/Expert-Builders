@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Automation Workflows (Workflow (active) / (finished) filters)
+--  EXPERT BUILDERS CRM - Automation Workflows (Workflow (active) / (finished) filters)
 --  Safe to re-run: CREATE TABLE IF NOT EXISTS + idempotent seed
 --  Run with: E:\xampp\mysql\bin\mysql.exe -u root < sql\workflows.sql
 -- ============================================================
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS workflows (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO workflows (name, status, description) VALUES
-  ('Welcome Automation',            'active',   'Greets new leads and introduces Evee models'),
+  ('Welcome Automation',            'active',   'Greets new leads and introduces Expert Builders services'),
   ('New Lead Nurture',              'active',   'Follow-up sequence for fresh test-ride leads'),
   ('Abandoned Booking Follow-up',   'active',   'Chases unfinished appointment sign-ups'),
   ('Trade-In Lead Responder',       'active',   'Reacts to trade-in enquiries'),

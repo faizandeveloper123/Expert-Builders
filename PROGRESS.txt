@@ -1,5 +1,5 @@
 ================================================================
-  EVEE - CRM CONTACTS DASHBOARD (React + TS + Tailwind + XAMPP MySQL)
+  EXPERT BUILDERS &amp; DEVELOPERS - CRM CONTACTS DASHBOARD (React + TS + Tailwind + XAMPP MySQL)
   PROGRESS TRACKER (RESUME POINT FOR OTHER AI TOOLS)
   Last updated: Aug 8, 2026
 ================================================================
@@ -104,8 +104,8 @@ RECENT WORK (Aug 13, 2026)
             - Cleaned up: no duplicate dev servers; single vite on 5173.
 
   [x] 23. LOGIN + ROLES/PERMISSIONS + NOTIFICATIONS (Aug 13)
-            - BRANDED LOGIN PAGE: src/components/LoginPage.tsx with Yadea branding
-              (orange #EB5F1B). Signs in via POST /auth and stores the session in
+            - BRANDED LOGIN PAGE: src/components/LoginPage.tsx with Expert Builders branding
+              (blue #0A58A3). Signs in via POST /auth and stores the session in
               localStorage (evee_auth_session_v1). Public form pages stay
               reachable without login.
             - PASSWORD HASHING: staff passwords are stored as bcrypt hashes

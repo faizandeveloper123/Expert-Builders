@@ -1,5 +1,5 @@
 ================================================================
-  EVEE - CRM CONTACTS DASHBOARD (React + TS + Tailwind + XAMPP MySQL)
+  EXPERT BUILDERS &amp; DEVELOPERS - CRM CONTACTS DASHBOARD (React + TS + Tailwind + XAMPP MySQL)
   PROJECT FOLDER & FILE STRUCTURE
   Last updated: Aug 8, 2026  (MySQL backend integrated)
 ================================================================
@@ -61,7 +61,7 @@ Evee/
         ├── NewBookingModal.tsx           # New booking modal (Assign Host select from staff)
         ├── MyStaffPage.tsx               # Settings -> My Staff: settings sidebar + staff table + edit modal (DP upload)
         ├── FormsDashboard.tsx            # Sidebar "Sites" -> HighLevel Forms page (list + editor)
-        ├── LoginPage.tsx                 # Branded login screen (Yadea branding, POST /auth)
+        ├── LoginPage.tsx                 # Branded login screen (Expert Builders branding, POST /auth)
         ├── NotificationsBell.tsx         # Top-bar bell: unread badge, dropdown, browser/email notify
         └── Toast.tsx                     # Bottom-right notification toast
 

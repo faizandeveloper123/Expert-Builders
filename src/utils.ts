@@ -50,7 +50,7 @@ const hostedImageCache = new Map<string, string>();
 /**
  * When a form header image is a huge base64 data URI (kept at original quality)
  * it blows up the shareable URL. Upload it once to the server and return a short
- * `/Yadea/api/index.php/form-images/{id}` reference instead. Remote URLs and
+ * `/expert-builders/api/index.php/form-images/{id}` reference instead. Remote URLs and
  * tiny SVGs pass through untouched.
  */
 export async function hostFormImage(image: string | undefined | null): Promise<string | undefined> {

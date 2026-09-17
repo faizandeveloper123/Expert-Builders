@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Staff Users (My Staff / Settings) Migration
+--  EXPERT BUILDERS CRM - Staff Users (My Staff / Settings) Migration
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:

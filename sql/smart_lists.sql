@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Smart Lists (server-side, multi-user)
+--  EXPERT BUILDERS CRM - Smart Lists (server-side, multi-user)
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:

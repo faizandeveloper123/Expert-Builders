@@ -270,7 +270,7 @@ function RightSidebar({
   const [companies, setCompanies] = useState<Company[]>([
     {
       id: 1,
-      name: 'Evee',
+      name: 'Expert Builders & Developers',
       phone: '+92 333 5702065',
       email: 'evee@gmail.com',
       website: 'evee.com',

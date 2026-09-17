@@ -1220,7 +1220,7 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
                         autoComplete="new-password"
                         className="w-full border border-slate-300 rounded px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                       />
-                      <p className="text-[10px] text-slate-400 mt-1">Used to sign in to this Evee account.</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Used to sign in to this Expert Builders account.</p>
                     </div>
 
                     <div className="space-y-3 pt-2">

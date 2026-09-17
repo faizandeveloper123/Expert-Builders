@@ -1,6 +1,6 @@
 <?php
 /**
- * EVEE CRM - REST API router
+ * EXPERT BUILDERS CRM - REST API router
  * ---------------------------------
  * GET  /api/index.php/contacts                 -> list (filters: search, tag, type, lead, sort)
  * GET  /api/index.php/contacts/{id}            -> single contact with tags
@@ -32,7 +32,7 @@
  * POST /api/index.php/submissions/{id}/assign   -> { assigned_to } (0 = unassign)
  * DELETE /api/index.php/submissions/{id}        -> remove a submission
  *
- * Full URL example:  http://localhost/Evee/api/index.php/contacts?search=faiz
+ * Full URL example:  http://localhost/expert-builders/api/index.php/contacts?search=faiz
  */
 
 declare(strict_types=1);
@@ -1053,7 +1053,7 @@ function create_staff(array $body): void
         $p = 'style="margin:0 0 12px 0;font-size:14px;line-height:22px;color:#334155;"';
         $bodyHtml =
             '<p ' . $p . '>Hi ' . $esc($name !== '' ? $name : 'there') . ',</p>'
-            . '<p ' . $p . '>Welcome! An account has been created for you on <strong>Yadea Pakistan</strong>. Your login details are below:</p>'
+            . '<p ' . $p . '>Welcome! An account has been created for you on <strong>Expert Builders & Developers</strong>. Your login details are below:</p>'
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin:0 0 16px 0;">'
             . '<tr><td style="padding:10px 14px 4px 14px;font-size:13px;color:#334155;"><strong>Email:</strong> ' . $esc($email) . '</td></tr>'
             . '<tr><td style="padding:4px 14px 10px 14px;font-size:13px;color:#334155;"><strong>Password:</strong> ' . $esc($rawPassword) . '</td></tr>'
@@ -1062,7 +1062,7 @@ function create_staff(array $body): void
             . '<a href="' . htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;padding:11px 26px;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;">Log in here</a>'
             . '</td></tr></table>'
             . '<p ' . $p . '>Please log in and change your password once you are in.</p>';
-        send_app_mail($email, $name, 'Your Yadea Pakistan account has been created', $bodyHtml);
+        send_app_mail($email, $name, 'Your Expert Builders & Developers account has been created', $bodyHtml);
     }
 
     respond(['data' => ['id' => $id], 'message' => 'Staff user created'], 201);
@@ -1581,7 +1581,7 @@ function send_dealer_registration_mail(string $email, string $name, ?string $pla
 
     $p = 'style="margin:0 0 12px 0;font-size:14px;line-height:22px;color:#334155;"';
     $html = '<p ' . $p . '>Hi ' . $esc($name !== '' ? $name : 'there') . ',</p>'
-        . '<p ' . $p . '>Thank you for registering as a dealer with <strong>Yadea Pakistan</strong>. '
+        . '<p ' . $p . '>Thank you for registering as a dealer with <strong>Expert Builders & Developers</strong>. '
         . 'We have received your dealership registration form successfully.</p>';
 
     if ($plain !== null && $plain !== '') {
@@ -1829,7 +1829,7 @@ function notify_staff(int $staffId, ?int $contactId, string $type, string $title
         $body = '<p>Hi ' . htmlspecialchars($name ?: 'there') . ',</p>'
             . '<p>' . htmlspecialchars($title) . '</p>'
             . '<p>' . htmlspecialchars($detail) . '</p>'
-            . '<p style="color:#64748b;font-size:12px">Yadea CRM Notification</p>';
+            . '<p style="color:#64748b;font-size:12px">Expert Builders CRM Notification</p>';
         send_notification_email($r['email'], $title, $body);
     }
 
@@ -3148,9 +3148,9 @@ function send_test_email(array $body): void
     $to = trim((string)($body['to'] ?? ''));
     if (!filter_var($to, FILTER_VALIDATE_EMAIL)) fail('A valid "to" email is required');
 
-    $subject = trim((string)($body['subject'] ?? '')) ?: 'Yadea CRM — SMTP test email';
+    $subject = trim((string)($body['subject'] ?? '')) ?: 'Expert Builders CRM — SMTP test email';
     $html = trim((string)($body['html'] ?? ''))
-        ?: '<p style="margin:0 0 10px 0;font-size:14px;color:#334155;">This is a test message from Yadea CRM.</p>'
+        ?: '<p style="margin:0 0 10px 0;font-size:14px;color:#334155;">This is a test message from Expert Builders CRM.</p>'
             . '<p style="margin:0;font-size:13px;color:#64748b;">If you received this, the SMTP account '
             . htmlspecialchars(defined('SMTP_USER') ? SMTP_USER : '', ENT_QUOTES, 'UTF-8')
             . ' is working correctly.</p>';

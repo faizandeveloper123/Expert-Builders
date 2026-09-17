@@ -1,5 +1,5 @@
 {
-  "name": "evee-contacts-dashboard",
+  "name": "expert-builders-crm",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -11,6 +11,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
     "chart.js": "^4.5.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

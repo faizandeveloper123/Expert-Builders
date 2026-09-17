@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Contact-related entities (right-side windows)
+--  EXPERT BUILDERS CRM - Contact-related entities (right-side windows)
 --  Tables: opportunities, tasks, notes, appointments
 --  Safe to re-run: uses CREATE TABLE IF NOT EXISTS
 --  Run with: C:\xampp\mysql\bin\mysql.exe -u root < sql\contact_related.sql

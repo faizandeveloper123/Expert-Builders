@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { FaLock, FaEnvelope, FaArrowRight, FaEye, FaEyeSlash, FaCircleExclamation } from 'react-icons/fa6';
 import { useAuth } from '../auth';
-import YadeaLogo from './YadeaLogo';
+import BrandLogo from './BrandLogo';
 
 interface LoginPageProps {
   onSuccess?: () => void;
 }
 
-const BRAND_ORANGE = '#EB5F1B';
+const BRAND_BLUE = '#0A58A3';
 
 /**
- * Yadea login screen. Signs a staff user in through the /auth endpoint; the
- * returned user (with their roles & permissions) drives everything they can
- * see and do after login.
+ * Expert Builders & Developers login screen. Signs a staff user in through the
+ * /auth endpoint; the returned user (with their roles & permissions) drives
+ * everything they can see and do after login.
  */
 function LoginPage({ onSuccess }: LoginPageProps) {
   const { login, loading } = useAuth();
@@ -38,7 +38,7 @@ function LoginPage({ onSuccess }: LoginPageProps) {
   };
 
   const inputClass =
-    'w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-10 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 transition';
+    'w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-10 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-blue/40 focus:border-brand-blue transition';
 
   return (
     <div className="min-h-screen flex bg-white font-sans" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -46,7 +46,7 @@ function LoginPage({ onSuccess }: LoginPageProps) {
       <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-[#1e2433] text-white flex-col justify-between p-12">
         <div
           className="absolute -top-40 -right-40 w-[480px] h-[480px] rounded-full opacity-20 blur-3xl"
-          style={{ background: BRAND_ORANGE }}
+          style={{ background: BRAND_BLUE }}
         />
         <div
           className="absolute -bottom-52 -left-24 w-[520px] h-[520px] rounded-full opacity-10 blur-3xl"
@@ -54,17 +54,18 @@ function LoginPage({ onSuccess }: LoginPageProps) {
         />
 
         <div className="relative flex items-center space-x-2.5">
-          <YadeaLogo wordmark={false} className="h-9 w-auto" />
-          <span className="text-xl font-bold tracking-tight">Agency</span>
+          <BrandLogo wordmark={false} className="h-9 w-auto" />
+          <span className="text-xl font-bold tracking-tight">Expert Builders</span>
         </div>
 
         <div className="relative max-w-lg">
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
-            Your entire <span style={{ color: BRAND_ORANGE }}>customer relationship</span>, in one place.
+            Your entire <span style={{ color: BRAND_BLUE }}>customer relationship</span>, in one place.
           </h1>
           <p className="mt-4 text-slate-300 text-sm leading-relaxed">
-            Agency brings your leads, conversations, calendars and opportunities together —
-            with role-based access so every team member sees exactly what they need.
+            Expert Builders & Developers brings your leads, conversations, calendars
+            and opportunities together — with role-based access so every team member
+            sees exactly what they need.
           </p>
 
           <div className="mt-10 grid grid-cols-3 gap-4 text-center">
@@ -74,7 +75,7 @@ function LoginPage({ onSuccess }: LoginPageProps) {
               ['Notify', 'Real-time alerts'],
             ].map(([title, sub]) => (
               <div key={title} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="text-sm font-bold" style={{ color: BRAND_ORANGE }}>
+                <div className="text-sm font-bold" style={{ color: BRAND_BLUE }}>
                   {title}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1">{sub}</div>
@@ -84,7 +85,7 @@ function LoginPage({ onSuccess }: LoginPageProps) {
         </div>
 
         <div className="relative text-xs text-slate-500">
-          © {new Date().getFullYear()} Agency CRM
+          © {new Date().getFullYear()} Expert Builders & Developers
         </div>
       </div>
 
@@ -93,13 +94,13 @@ function LoginPage({ onSuccess }: LoginPageProps) {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center space-x-2.5 mb-8 justify-center">
-            <YadeaLogo wordmark={false} className="h-9 w-auto" />
-            <span className="text-2xl font-bold text-slate-800 tracking-tight">Agency</span>
+            <BrandLogo wordmark={false} className="h-9 w-auto" />
+            <span className="text-2xl font-bold text-slate-800 tracking-tight">Expert Builders</span>
           </div>
 
           <div className="bg-white lg:bg-white rounded-2xl shadow-sm lg:shadow-lg border border-slate-200 lg:border-slate-100 p-8">
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome back</h2>
-            <p className="text-sm text-slate-500 mt-1">Sign in to your Agency account to continue.</p>
+            <p className="text-sm text-slate-500 mt-1">Sign in to your Expert Builders account to continue.</p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
               <div>
@@ -128,7 +129,7 @@ function LoginPage({ onSuccess }: LoginPageProps) {
                   <button
                     type="button"
                     onClick={() => setError('Password reset coming soon')}
-                    className="text-[11px] font-medium text-orange-600 hover:underline"
+                    className="text-[11px] font-medium text-brand-blue hover:underline"
                   >
                     Forgot password?
                   </button>
@@ -178,9 +179,9 @@ function LoginPage({ onSuccess }: LoginPageProps) {
                 type="submit"
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-2 text-white font-semibold text-sm py-2.5 rounded-lg shadow-sm transition hover:brightness-110 disabled:opacity-60"
-                style={{ backgroundColor: BRAND_ORANGE }}
+                style={{ backgroundColor: BRAND_BLUE }}
               >
-                {loading ? 'Signing in…' : 'Sign in to Agency'}
+                {loading ? 'Signing in…' : 'Sign in to Expert Builders'}
                 {!loading && <FaArrowRight className="text-xs" />}
               </button>
             </form>

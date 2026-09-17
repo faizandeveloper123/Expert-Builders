@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Seed data (matches the original UI mock rows)
+--  EXPERT BUILDERS CRM - Seed data (matches the original UI mock rows)
 --  Run AFTER schema.sql
 --    C:\xampp\mysql\bin\mysql.exe -u root < sql\seed.sql
 -- ============================================================
@@ -11,7 +11,7 @@ INSERT INTO contacts
   (id, first_name, last_name, full_name, phone, email, business_name,
    contact_type, is_lead, avatar_color, created_at, last_activity_at)
 VALUES
-  (1, 'Muhammad', 'Faizan', 'Muhammad Faizan', '0371 1520951', 'faizan@gmail.com', 'Evee',
+  (1, 'Muhammad', 'Faizan', 'Muhammad Faizan', '0371 1520951', 'faizan@gmail.com', 'Expert Builders',
    'Lead', 1, 'bg-emerald-200 text-emerald-800', '2026-08-08 15:50:00', NULL),
   (2, 'Tahira', 'Abbas', 'Tahira Abbas', '0371 1520051', 'orixzylum@gmail.com', NULL,
    '', 0, 'bg-sky-200 text-sky-800', '2026-08-08 14:06:00', NULL),

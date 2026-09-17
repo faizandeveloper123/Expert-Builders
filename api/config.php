@@ -1,6 +1,6 @@
 <?php
 /**
- * EVEE CRM - Database configuration & shared helpers
+ * EXPERT BUILDERS CRM - Database configuration & shared helpers
  * XAMPP defaults: user root, empty password.
  */
 
@@ -143,7 +143,7 @@ function generate_strong_password(int $length = 12): string
 function email_html_template(string $title, string $bodyHtml): string
 {
     $brand = '#EB5F1B';
-    $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea Pakistan';
+    $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Expert Builders & Developers';
     $year = date('Y');
     $titleEsc = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
     return '<!DOCTYPE html>
@@ -208,8 +208,8 @@ function send_app_mail(string $to, string $toName, string $subject, string $body
         // Not configured yet: legacy best-effort mail() path.
         $headers = "MIME-Version: 1.0\r\n"
             . "Content-Type: text/html; charset=UTF-8\r\n"
-            . 'From: ' . (defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea CRM') . " <no-reply@evee.local>\r\n"
-            . "X-Mailer: Yadea CRM Notification\r\n";
+            . 'From: ' . (defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Expert Builders CRM') . " <no-reply@expertbuilders.local>\r\n"
+            . "X-Mailer: Expert Builders CRM Notification\r\n";
         try {
             return @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $html, $headers);
         } catch (Throwable $e) {
@@ -257,15 +257,15 @@ function send_app_mail(string $to, string $toName, string $subject, string $body
 
         // Send from the authenticated mailbox itself (SPF/DKIM aligned),
         // which keeps the message out of spam folders.
-        $from = SMTP_USER !== '' ? SMTP_USER : 'no-reply@evee.local';
-        $mail->setFrom($from, defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea CRM');
+        $from = SMTP_USER !== '' ? SMTP_USER : 'no-reply@expertbuilders.local';
+        $mail->setFrom($from, defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Expert Builders CRM');
         if ($toName !== '') {
             $mail->addAddress($to, $toName);
         } else {
             $mail->addAddress($to);
         }
         if ($from !== $to) {
-            $mail->addReplyTo($from, defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea CRM');
+            $mail->addReplyTo($from, defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Expert Builders CRM');
         }
 
         $mail->isHTML(true);
@@ -275,7 +275,7 @@ function send_app_mail(string $to, string $toName, string $subject, string $body
 
         return $mail->send();
     } catch (Throwable $e) {
-        error_log('[Evee CRM] Mail to ' . $to . ' failed: ' . $e->getMessage());
+        error_log('[Expert Builders CRM] Mail to ' . $to . ' failed: ' . $e->getMessage());
         mail_diag('MAIL FAIL to ' . $to . ': ' . $e->getMessage());
         return false;
     }
@@ -325,7 +325,7 @@ function send_crm_mail(array $opts): array
     $bccs = $norm($opts['bcc'] ?? null);
     $subject = trim((string)($opts['subject'] ?? ''));
     $html = (string)($opts['html'] ?? '');
-    $fromName = trim((string)($opts['from_name'] ?? '')) ?: (defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea Pakistan');
+    $fromName = trim((string)($opts['from_name'] ?? '')) ?: (defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Expert Builders & Developers');
 
     $valid = array_values(array_filter(array_map('trim', $tos), fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL)));
     if ($valid === [] || $subject === '') {
@@ -357,7 +357,7 @@ function send_crm_mail(array $opts): array
         $mail->CharSet = 'UTF-8';
         $mail->Encoding = 'base64';
         $mail->SMTPKeepAlive = true;
-        $from = $mail->Username !== '' ? $mail->Username : 'no-reply@evee.local';
+        $from = $mail->Username !== '' ? $mail->Username : 'no-reply@expertbuilders.local';
         $mail->setFrom($from, $fromName);
         foreach (array_filter(array_map('trim', $ccs), fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL)) as $cc) {
             $mail->addCC($cc);

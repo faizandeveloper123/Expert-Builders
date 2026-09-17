@@ -1,0 +1,8 @@
+{
+  "appId": "com.expertbuilders.crm",
+  "appName": "Expert Builders CRM",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  }
+}

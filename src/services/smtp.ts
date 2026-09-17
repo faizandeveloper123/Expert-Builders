@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  SMTP EMAIL SERVICE — crm@yadea.com.pk (cPanel webmail)
+ *  SMTP EMAIL SERVICE — CRM outbound mail (cPanel webmail)
  * ============================================================================
  *  Sends real email through the CRM's own mailbox via the PHP backend
  *  (api/index.php -> /emails/send), which uses PHPMailer + SMTP.
@@ -11,12 +11,12 @@
  */
 
 export const SMTP_FROM_EMAIL = 'crm@yadea.com.pk';
-export const SMTP_FROM_NAME = 'Agency';
+export const SMTP_FROM_NAME = 'Expert Builders & Developers';
 
 /**
  * Same-origin API base, auto-detecting the app's sub-directory.
  * Derives the path from the current URL so it works regardless of the
- * deployment folder name (e.g. /Yadea/, /Yadea-Pakistan/, or root /).
+ * deployment folder name (e.g. /expert-builders/, /expert-builders-dev/, or root /).
  */
 function detectApiBases(): string[] {
   const path = window.location.pathname;

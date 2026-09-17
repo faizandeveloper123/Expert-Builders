@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Staff User Roles (Admin / Dealer / Follower)
+--  EXPERT BUILDERS CRM - Staff User Roles (Admin / Dealer / Follower)
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:

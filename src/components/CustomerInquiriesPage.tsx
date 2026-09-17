@@ -38,7 +38,7 @@ const PROBLEMS = [
 ];
 
 const inputCls =
-  'w-full bg-white border border-slate-300 focus:border-yadea-orange rounded-lg px-4 py-3 text-sm text-slate-800 outline-none transition placeholder-slate-400 shadow-sm';
+  'w-full bg-white border border-slate-300 focus:border-brand-blue rounded-lg px-4 py-3 text-sm text-slate-800 outline-none transition placeholder-slate-400 shadow-sm';
 
 function fmtDate(v: string | null): string {
   if (!v) return '-';
@@ -154,18 +154,18 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
       const refCode = res.data?.code || '';
       sendSmtpEmail({
         to: [form.custEmail.trim()],
-        subject: `Support Ticket ${refCode} Received — Yadea Pakistan`,
+        subject: `Support Ticket ${refCode} Received — Expert Builders & Developers`,
         html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
           <h2 style="color:#12161a;">We've Received Your Support Ticket</h2>
           <p>Dear ${form.custName.trim()},</p>
-          <p>Thank you for reaching out to Yadea Pakistan. Your support ticket has been successfully submitted.</p>
+          <p>Thank you for reaching out to Expert Builders & Developers. Your support ticket has been successfully submitted.</p>
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;">
             <p style="margin:4px 0;"><strong>Reference Code:</strong> ${refCode}</p>
             <p style="margin:4px 0;"><strong>Problem Category:</strong> ${form.problemCategory}</p>
             <p style="margin:4px 0;"><strong>Chassis Number:</strong> ${form.chassisNumber.trim()}</p>
           </div>
           <p>Our team will review your ticket and respond within 48 business hours.</p>
-          <p style="color:#64748b;font-size:12px;margin-top:24px;">Yadea Pakistan — Driving Sustainable Mobility Forward</p>
+          <p style="color:#64748b;font-size:12px;margin-top:24px;">Expert Builders & Developers — Building Tomorrow, Delivering Today</p>
         </div>`,
       }).catch(() => undefined);
       setForm({ chassisNumber: '', orderNumber: '', problemCategory: '', custName: '', custEmail: '', custPhone: '', custReason: '' });
@@ -205,7 +205,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
               <p style="margin:4px 0;"><strong>Reason:</strong> ${row.reason || 'N/A'}</p>
             </div>
             <p>Please log in to the CRM to view the full details and take action.</p>
-            <p style="color:#64748b;font-size:12px;margin-top:24px;">Yadea Pakistan — Driving Sustainable Mobility Forward</p>
+            <p style="color:#64748b;font-size:12px;margin-top:24px;">Expert Builders & Developers — Building Tomorrow, Delivering Today</p>
           </div>`,
         }).catch(() => undefined);
       }
@@ -253,7 +253,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
     });
     const link = document.createElement('a');
     link.href = `data:text/csv;charset=utf-8,${encodeURI(csv)}`;
-    link.download = 'yadea_customer_inquiries.csv';
+    link.download = 'expert_builders_customer_inquiries.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -324,7 +324,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
             <textarea rows={4} value={form.custReason} onChange={setField('custReason')} placeholder="Tell Us Your Reason *" className={`${inputCls} resize-none`} />
 
             <label className="flex items-start gap-2 pt-1 cursor-pointer">
-              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-yadea-orange cursor-pointer" />
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-brand-blue cursor-pointer" />
               <span className="text-xs text-slate-600 leading-relaxed">
                 I have read the Privacy Policy and accept the processing of data for the purposes indicated.
               </span>
@@ -335,7 +335,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                 type="button"
                 onClick={() => void submit()}
                 disabled={saving}
-                className="w-full md:w-1/2 bg-yadea-orange hover:bg-yadea-dark text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition uppercase tracking-wider text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full md:w-1/2 bg-brand-blue hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition uppercase tracking-wider text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FaPaperPlane className="text-xs" />
                 {saving ? 'Sending…' : 'Send'}
@@ -386,7 +386,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search inquiries…"
-                className="px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-yadea-orange w-44"
+                className="px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-brand-blue w-44"
               />
               <button
                 onClick={() => void copyFormLink()}
@@ -422,7 +422,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                   filtered.map((r) => (
                     <tr key={r.id} className="hover:bg-slate-50 transition align-top">
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="font-mono font-bold text-yadea-dark">{r.code}</div>
+                        <div className="font-mono font-bold text-brand-dark">{r.code}</div>
                         <div className="text-[10px] text-slate-400">{fmtDate(r.created_at)}</div>
                       </td>
                       <td className="px-4 py-3">
@@ -470,7 +470,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                               onClick={() => setOpenAssign((v) => (v === r.id ? null : r.id))}
                               className={`text-[11px] font-bold px-2 py-1 rounded transition ${
                                 openAssign === r.id
-                                  ? 'bg-yadea-orange text-white'
+                                  ? 'bg-brand-blue text-white'
                                   : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
                               }`}
                               title="Assign to a dealer"
@@ -479,7 +479,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                               Assign to
                             </button>
                           )}
-                          <button onClick={() => setViewing(r)} className="text-slate-600 hover:text-yadea-orange text-[11px] font-bold px-2 py-1 bg-slate-100 rounded hover:bg-orange-50 transition">
+                          <button onClick={() => setViewing(r)} className="text-slate-600 hover:text-brand-blue text-[11px] font-bold px-2 py-1 bg-slate-100 rounded hover:bg-orange-50 transition">
                             View
                           </button>
                           {isAdmin && (
@@ -502,7 +502,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                             <select
                               value={assignPick[r.id] ?? 0}
                               onChange={(e) => setAssignPick((prev) => ({ ...prev, [r.id]: Number(e.target.value) }))}
-                              className="w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-yadea-orange mb-2"
+                              className="w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-brand-blue mb-2"
                             >
                               <option value={0}>Select dealer…</option>
                               {dealers.map((d) => (
@@ -512,7 +512,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                             <div className="flex items-center gap-1.5">
                               <button
                                 onClick={() => void assign(r)}
-                                className="flex-1 bg-yadea-orange hover:bg-yadea-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
+                                className="flex-1 bg-brand-blue hover:bg-brand-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
                               >
                                 Assign & Notify
                               </button>

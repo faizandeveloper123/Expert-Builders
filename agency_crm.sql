@@ -1,6 +1,6 @@
 -- ============================================================
 --  AGENCY CRM  - MASTER DATABASE (merged from every SQL file)
---  Generated automatically from the Yadea-Pakistan sql/ set
+--  Generated automatically from the expert-builders sql/ set
 --
 --  HOW TO IMPORT
 --    1. StackCP -> MySQL Databases -> create database "agency"
@@ -71,7 +71,7 @@ CREATE TABLE `appointments` (
 --
 
 INSERT INTO `appointments` (`id`, `contact_id`, `title`, `calendar`, `host`, `date`, `start_time`, `end_time`, `location`, `status`, `notes`, `category`, `created_at`) VALUES
-(3, 12, 'Test Ride & Sales Consultation', 'Sales Consultation Calendar', 'Asad B Zaman', '2026-08-08', '10:00 AM', '10:30 AM', 'Google Meet Video Link', 'Completed', 'Customer requested a test ride for Evee electric scooter model.', 'past', '2026-08-09 17:58:29'),
+(3, 12, 'Test Ride & Sales Consultation', 'Sales Consultation Calendar', 'Asad B Zaman', '2026-08-08', '10:00 AM', '10:30 AM', 'Google Meet Video Link', 'Completed', 'Customer requested a test ride for Expert Builders consultation.', 'past', '2026-08-09 17:58:29'),
 (4, 12, 'Out of office / Slot Blocked', 'General Support Calendar', 'Asad B Zaman', '2026-08-09', '09:00 AM', '05:00 PM', 'Calendar Lock', 'Blocked', NULL, 'past', '2026-08-09 17:58:39');
 
 -- --------------------------------------------------------
@@ -103,7 +103,7 @@ CREATE TABLE `contacts` (
 --
 
 INSERT INTO `contacts` (`id`, `first_name`, `last_name`, `phone`, `email`, `business_name`, `contact_type`, `is_lead`, `avatar_color`, `avatar_data`, `notes`, `created_at`, `last_activity_at`, `updated_at`) VALUES
-(1, 'Muhammad', 'Faizan', '0371 1520951', 'faizan@gmail.com', 'Evee', 'Lead', 1, 'bg-emerald-200 text-emerald-800', NULL, NULL, '2026-08-08 15:50:00', NULL, '2026-08-08 22:41:47'),
+(1, 'Muhammad', 'Faizan', '0371 1520951', 'faizan@gmail.com', 'Expert Builders', 'Lead', 1, 'bg-emerald-200 text-emerald-800', NULL, NULL, '2026-08-08 15:50:00', NULL, '2026-08-08 22:41:47'),
 (2, 'Tahira', 'Abbas', '0371 1520051', 'orixzylum@gmail.com', NULL, '', 0, 'bg-sky-200 text-sky-800', NULL, NULL, '2026-08-08 14:06:00', NULL, '2026-08-08 22:41:47'),
 (3, '(Example) Casey', 'Mo...', '+16541234567', NULL, '(Example) Dunder Miff...', '', 0, 'bg-purple-200 text-purple-800', NULL, NULL, '2026-08-08 13:32:00', NULL, '2026-08-08 22:41:47'),
 (4, '(Example) Taylor', 'Re...', '+178655689546', NULL, '(Example) MacLaren\'s...', '', 0, 'bg-sky-200 text-sky-800', NULL, NULL, '2026-08-08 13:32:00', NULL, '2026-08-08 22:41:47'),
@@ -178,7 +178,7 @@ CREATE TABLE `opportunities` (
 --
 
 INSERT INTO `opportunities` (`id`, `contact_id`, `name`, `pipeline`, `stage`, `status`, `value`, `business_name`, `created_at`) VALUES
-(2, 12, 'John Doe', 'Marketing Pipeline', 'New Lead', 'Open', 'Rs 0', 'Evee', '2026-08-09 17:53:05');
+(2, 12, 'John Doe', 'Marketing Pipeline', 'New Lead', 'Open', 'Rs 0', 'Expert Builders', '2026-08-09 17:53:05');
 
 -- --------------------------------------------------------
 
@@ -434,7 +434,7 @@ COMMIT;
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Contact-related entities (right-side windows)
+--  EXPERT BUILDERS CRM - Contact-related entities (right-side windows)
 --  Tables: opportunities, tasks, notes, appointments
 --  Safe to re-run: uses CREATE TABLE IF NOT EXISTS
 --  Run with: C:\xampp\mysql\bin\mysql.exe -u root < sql\contact_related.sql
@@ -525,7 +525,7 @@ CREATE TABLE IF NOT EXISTS appointments (
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Staff Users (My Staff / Settings) Migration
+--  EXPERT BUILDERS CRM - Staff Users (My Staff / Settings) Migration
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:
@@ -657,7 +657,7 @@ ON DUPLICATE KEY UPDATE
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Staff User Roles (Admin / Dealer / Follower)
+--  EXPERT BUILDERS CRM - Staff User Roles (Admin / Dealer / Follower)
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:
@@ -708,7 +708,7 @@ DEALLOCATE PREPARE stmt;
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Extended contact fields + staff password migration
+--  EXPERT BUILDERS CRM - Extended contact fields + staff password migration
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:
@@ -827,7 +827,7 @@ WHERE is_lead = 1
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Auth + Notifications Migration
+--  EXPERT BUILDERS CRM - Auth + Notifications Migration
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:
@@ -899,7 +899,7 @@ WHERE password IS NULL OR password = '';
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Smart Lists (server-side, multi-user)
+--  EXPERT BUILDERS CRM - Smart Lists (server-side, multi-user)
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:
@@ -953,7 +953,7 @@ CREATE TABLE IF NOT EXISTS smart_list_shares (
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Dealer self-registration via website form
+--  EXPERT BUILDERS CRM - Dealer self-registration via website form
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:
@@ -1010,7 +1010,7 @@ DEALLOCATE PREPARE stmt;
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Dealer / Franchise Lead Assignment & Tracking
+--  EXPERT BUILDERS CRM - Dealer / Franchise Lead Assignment & Tracking
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:
@@ -1052,7 +1052,7 @@ CREATE TABLE IF NOT EXISTS dealer_lead_status (
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Dealer Lead STAGE Pipeline (v2)
+--  EXPERT BUILDERS CRM - Dealer Lead STAGE Pipeline (v2)
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Replaces the simple status enum with a full stage pipeline so
@@ -1095,7 +1095,7 @@ ALTER TABLE dealer_lead_status
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Dealer Lead BUCKETS (v3)
+--  EXPERT BUILDERS CRM - Dealer Lead BUCKETS (v3)
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Replaces the 7-stage pipeline with 5 simple buckets a dealer
@@ -1144,7 +1144,7 @@ ALTER TABLE dealer_lead_status
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Campaigns (for Active / Paused / Canceled / Finished campaign filters)
+--  EXPERT BUILDERS CRM - Campaigns (for Active / Paused / Canceled / Finished campaign filters)
 --  Safe to re-run: CREATE TABLE IF NOT EXISTS + idempotent seed
 --  Run with: E:\xampp\mysql\bin\mysql.exe -u root < sql\campaigns.sql
 -- ============================================================
@@ -1182,7 +1182,7 @@ ON DUPLICATE KEY UPDATE
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Automation Workflows (Workflow (active) / (finished) filters)
+--  EXPERT BUILDERS CRM - Automation Workflows (Workflow (active) / (finished) filters)
 --  Safe to re-run: CREATE TABLE IF NOT EXISTS + idempotent seed
 --  Run with: E:\xampp\mysql\bin\mysql.exe -u root < sql\workflows.sql
 -- ============================================================
@@ -1199,7 +1199,7 @@ CREATE TABLE IF NOT EXISTS workflows (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO workflows (name, status, description) VALUES
-  ('Welcome Automation',            'active',   'Greets new leads and introduces Evee models'),
+  ('Welcome Automation',            'active',   'Greets new leads and introduces Expert Builders services'),
   ('New Lead Nurture',              'active',   'Follow-up sequence for fresh test-ride leads'),
   ('Abandoned Booking Follow-up',   'active',   'Chases unfinished appointment sign-ups'),
   ('Trade-In Lead Responder',       'active',   'Reacts to trade-in enquiries'),
@@ -1217,7 +1217,7 @@ ON DUPLICATE KEY UPDATE
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Form builder persistence
+--  EXPERT BUILDERS CRM - Form builder persistence
 --    C:\xampp\mysql\bin\mysql.exe -u root < sql\forms.sql
 --
 --  Stores every form created in the Forms dashboard so it
@@ -1243,7 +1243,7 @@ CREATE TABLE IF NOT EXISTS forms (
 /* ========================================================================== */
 
 -- ============================================================
---  EVEE CRM - Form submission data on leads
+--  EXPERT BUILDERS CRM - Form submission data on leads
 --  Run AFTER contacts_extended.sql (custom_fields column)
 --    C:\xampp\mysql\bin\mysql.exe -u root < sql\form_submissions.sql
 --
@@ -1311,7 +1311,7 @@ UPDATE contacts SET custom_fields = JSON_OBJECT(
 /* ========================================================================== */
 
 INSERT INTO staff_users (first_name, last_name, email, user_type, restrict_data, password, password_plain, approved) VALUES
-('Admin', 'Yadea', 'hifimarketing.co@gmail.com', 'Admin', 0,
+('Admin', 'Expert Builders', 'hifimarketing.co@gmail.com', 'Admin', 0,
 '$2y$10$Zs6gJJsjGisbnB5s9ZP2AuUNynNyYfABRjqIjJK4jT.P.0lHIcVl.',
 'FWAER@#$R', 1)
 ON DUPLICATE KEY UPDATE
@@ -1320,7 +1320,7 @@ ON DUPLICATE KEY UPDATE
   approved=1,
   user_type='Admin',
   first_name='Admin',
-  last_name='Yadea';
+  last_name='Expert Builders';
 
 /* ========================================================================== */
 /*  PART 17 - TABLES THE API EXPECTS (contact_followers, contact_activities, form_images, portal_submissions) + SOFT-DELETE + FINAL VIEWS */

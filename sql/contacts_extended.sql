@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Extended contact fields + staff password migration
+--  EXPERT BUILDERS CRM - Extended contact fields + staff password migration
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:

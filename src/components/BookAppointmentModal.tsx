@@ -31,7 +31,7 @@ function BookAppointmentModal({ contactName, phone, onClose, onSave }: BookAppoi
     end_time: '10:30 AM',
     timezone: '(GMT+05:00) Pakistan Standard Time (PKT)',
     location: 'Google Meet Video Link',
-    notes: 'Customer requested a test ride for Evee electric scooter model.',
+    notes: 'Customer requested an Expert Builders consultation.',
     status: 'Completed',
     send_invite: '1',
   });
@@ -119,7 +119,7 @@ function BookAppointmentModal({ contactName, phone, onClose, onSave }: BookAppoi
                 <div className="relative">
                   <select value={form.calendar} onChange={set('calendar')} className={selectCls}>
                     <option value="Sales Consultation Calendar">Sales Consultation Calendar</option>
-                    <option value="Evee Test Ride Calendar">Evee Test Ride Calendar</option>
+                    <option value="Expert Builders Consultation Calendar">Expert Builders Consultation Calendar</option>
                     <option value="General Support Calendar">General Support Calendar</option>
                   </select>
                   <Chevron />

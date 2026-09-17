@@ -28,7 +28,7 @@ import {
   FaStore,
   FaHeadset,
 } from 'react-icons/fa6';
-import YadeaLogo from './YadeaLogo';
+import BrandLogo from './BrandLogo';
 import { useAuth } from '../auth';
 import UserMenu from './UserMenu';
 import WorkspaceBox from './WorkspaceBox';
@@ -138,9 +138,9 @@ function Sidebar({
           <div className="flex items-center space-x-2.5">
             <div className="flex items-center justify-center pl-1">
               {collapsed ? (
-                <YadeaLogo wordmark={false} className="h-5 w-auto" />
+                <BrandLogo wordmark={false} className="h-5 w-auto" />
               ) : (
-                <YadeaLogo className="h-6 w-auto" />
+                <BrandLogo className="h-6 w-auto" />
               )}
             </div>
           </div>

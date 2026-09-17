@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Contacts/Leads Database Schema
+--  EXPERT BUILDERS CRM - Contacts/Leads Database Schema
 --  XAMPP MySQL (MariaDB 10.4+)
 --  Design goal: STORE contacts AND make leads easy to FIND.
 --

@@ -16,7 +16,7 @@ import {
 } from 'react-icons/fa6';
 import { api, type ApiInvoice, type InvoiceInput } from '../api';
 import { useAuth } from '../auth';
-import YadeaLogo from './YadeaLogo';
+import BrandLogo from './BrandLogo';
 
 /* ------------------------------ helpers ------------------------------ */
 
@@ -140,7 +140,7 @@ interface InvoiceFormState {
   taxRate: string;
 }
 
-/** Defaults carried over from the printed Yadea slip (fixed shop details). */
+/** Defaults carried over from the printed Expert Builders slip (fixed shop details). */
 const EMPTY_FORM: InvoiceFormState = {
   invoiceNo: '',
   dated: '',
@@ -221,7 +221,7 @@ const DEFAULT_DESIGN: InvoiceDesign = {
   elements: {},
 };
 
-const designStorageKey = (uid?: number | null) => `yadea_invoice_design_v1_u${uid ?? 0}`;
+const designStorageKey = (uid?: number | null) => `ebd_invoice_design_v1_u${uid ?? 0}`;
 
 function loadDesign(uid?: number | null): InvoiceDesign {
   try {
@@ -276,7 +276,7 @@ function loadHtml2Pdf(): Promise<Html2PdfApi> {
 /* ------------------------------- icons ------------------------------ */
 
 const DESC_ROWS: { key: keyof InvoiceFormState; label: string; placeholder: string }[] = [
-  { key: 'motorcycle', label: 'Motorcycle', placeholder: 'e.g. Yadea T9 Electric Scooter' },
+  { key: 'motorcycle', label: 'Motorcycle', placeholder: 'e.g. Expert Builders Construction Project' },
   { key: 'year', label: 'M/Year', placeholder: '2026' },
   { key: 'color', label: 'Colur', placeholder: 'Grey / Red' },
   { key: 'engine', label: 'Engine#', placeholder: 'Engine No.' },
@@ -401,7 +401,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
   /* Load the Poppins display font once for the invoice sheet. */
   useEffect(() => {
-    const id = 'yadea-invoice-poppins';
+    const id = 'ebd-invoice-poppins';
     if (document.getElementById(id)) return;
     const link = document.createElement('link');
     link.id = id;
@@ -623,7 +623,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
       await html2pdf()
         .set({
           margin: [0.15, 0.15, 0.15, 0.15],
-          filename: `Yadea_Sales_Tax_Invoice_${form.invoiceNo.trim() || 'draft'}.pdf`,
+          filename: `ExpertBuilders_Sales_Tax_Invoice_${form.invoiceNo.trim() || 'draft'}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0 },
           jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
@@ -717,13 +717,13 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
     <div {...regionProps('lockup')}>
       <div className="flex flex-col items-center shrink-0 mt-[20px] ml-[20px]">
         <div className="flex items-end" style={{ height: design.iconSize }}>
-          <YadeaLogo wordmark={false} className="h-full w-auto" />
+          <BrandLogo wordmark={false} className="h-full w-auto" />
         </div>
         <span
           className="leading-none font-black uppercase tracking-[0.05em] mt-1.5"
           style={{ fontSize: design.brandTextSize, color: elO('lockup').colorA ?? design.brandTextColor }}
         >
-          Yadea
+          Expert Builders
         </span>
       </div>
       <Handles id="lockup" />
@@ -790,9 +790,9 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
       {/* Scoped styles: editable-field look + print isolation */}
       <style>{`
         .inv-dotted { border-bottom: 1.5px dotted #94a3b8; background: transparent; transition: border-color .15s ease; }
-        .inv-dotted:focus { border-bottom: 1.5px solid #EB5F1B; outline: none; }
+        .inv-dotted:focus { border-bottom: 1.5px solid #0A58A3; outline: none; }
         .inv-underlined { border-bottom: 1px solid #1e293b; background: transparent; }
-        .inv-underlined:focus { border-bottom: 2px solid #EB5F1B; outline: none; }
+        .inv-underlined:focus { border-bottom: 2px solid #0A58A3; outline: none; }
         .inv-bare:focus { outline: none; background-color: rgba(254, 243, 199, 0.45); }
         .inv-selected { outline: 2px dashed #2563eb !important; outline-offset: 2px; cursor: move; }
         .inv-ui { font-family: Inter, ui-sans-serif, system-ui, sans-serif; user-select: none; }
@@ -821,22 +821,22 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
           {/* Page heading + sticky action bar */}
           <div className="inv-no-print sticky top-0 z-30 -mx-3 md:-mx-6 px-3 md:px-6 pt-4 pb-3 mb-5 bg-slate-100/85 backdrop-blur-md border-b border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-yadea-black flex items-center justify-center shadow-md shadow-slate-900/20 ring-1 ring-black/10">
-                <YadeaLogo wordmark={false} className="h-7 w-auto" />
+              <div className="w-11 h-11 rounded-xl bg-brand-black flex items-center justify-center shadow-md shadow-slate-900/20 ring-1 ring-black/10">
+                <BrandLogo wordmark={false} className="h-7 w-auto" />
               </div>
               <div>
                 <h1 className="text-lg font-extrabold text-slate-900 leading-tight">
                   Sales Tax Invoice
                 </h1>
                 <p className="text-xs text-slate-500">
-                  Create, save and export official Yadea Hussain Motors invoices
+                  Create, save and export official Expert Builders & Developers invoices
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
               {editingId !== null && (
-                <span className="inline-flex items-center gap-1.5 bg-yadea-orange/10 text-yadea-dark border border-yadea-orange/30 rounded-lg px-2.5 py-2 text-[11px] font-bold">
+                <span className="inline-flex items-center gap-1.5 bg-brand-blue/10 text-brand-dark border border-brand-blue/30 rounded-lg px-2.5 py-2 text-[11px] font-bold">
                   <FaPenToSquare className="text-[10px]" />
                   Editing #{form.invoiceNo || editingId}
                 </span>
@@ -850,7 +850,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                     : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400'
                 }`}
               >
-                <FaChartLine className="text-yadea-orange" />
+                <FaChartLine className="text-brand-blue" />
                 {view === 'editor' ? 'Invoice Dashboard' : 'Back to Editor'}
               </button>
               {view === 'editor' && (
@@ -867,7 +867,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                     onClick={handleSave}
                     disabled={!canEdit || saving}
                     title={canEdit ? 'Save invoice to database' : 'You do not have edit permission'}
-                    className="inline-flex items-center gap-1.5 h-9 px-4 bg-yadea-orange hover:bg-yadea-dark text-white text-xs font-bold rounded-lg shadow-sm shadow-yadea-orange/40 transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                    className="inline-flex items-center gap-1.5 h-9 px-4 bg-brand-blue hover:bg-brand-dark text-white text-xs font-bold rounded-lg shadow-sm shadow-brand-blue/40 transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                   >
                     <FaFloppyDisk className={saving ? 'animate-pulse' : ''} />
                     {saving ? 'Saving...' : editingId !== null ? 'Update' : 'Save'}
@@ -884,9 +884,9 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                     onClick={() => void handleDownloadPdf()}
                     disabled={!canExport || pdfBusy}
                     title={canExport ? 'Download as PDF' : 'You do not have export permission'}
-                    className="inline-flex items-center gap-1.5 h-9 px-4 bg-yadea-black hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1.5 h-9 px-4 bg-brand-black hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FaFilePdf className={`text-yadea-orange ${pdfBusy ? 'animate-pulse' : ''}`} />
+                    <FaFilePdf className={`text-brand-blue ${pdfBusy ? 'animate-pulse' : ''}`} />
                     {pdfBusy ? 'Preparing...' : 'Download PDF'}
                   </button>
                 </>
@@ -900,7 +900,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
               {/* Summary stat cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-yadea-orange/10 text-yadea-dark flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-brand-blue/10 text-brand-dark flex items-center justify-center shrink-0">
                     <FaFileInvoice />
                   </div>
                   <div className="min-w-0">
@@ -909,7 +909,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                   </div>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-yadea-orange/10 text-yadea-dark flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-brand-blue/10 text-brand-dark flex items-center justify-center shrink-0">
                     <FaChartLine />
                   </div>
                   <div className="min-w-0">
@@ -920,7 +920,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                   </div>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-yadea-orange/10 text-yadea-dark flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-brand-blue/10 text-brand-dark flex items-center justify-center shrink-0">
                     <FaMotorcycle />
                   </div>
                   <div className="min-w-0">
@@ -939,8 +939,8 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                     onClick={() => setRangeKey(r.key)}
                     className={`h-7 px-3 rounded-full text-[11px] font-bold transition active:scale-[0.97] ${
                       rangeKey === r.key
-                        ? 'bg-yadea-orange text-white shadow-sm shadow-yadea-orange/40'
-                        : 'bg-slate-50 text-slate-500 border border-slate-200 hover:border-yadea-orange/50 hover:text-yadea-dark'
+                        ? 'bg-brand-blue text-white shadow-sm shadow-brand-blue/40'
+                        : 'bg-slate-50 text-slate-500 border border-slate-200 hover:border-brand-blue/50 hover:text-brand-dark'
                     }`}
                   >
                     {r.label}
@@ -952,7 +952,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                       type="datetime-local"
                       value={customFrom}
                       onChange={(e) => setCustomFrom(e.target.value)}
-                      className="h-7 text-[11px] border border-slate-300 rounded-md px-1.5 text-slate-700 focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/30"
+                      className="h-7 text-[11px] border border-slate-300 rounded-md px-1.5 text-slate-700 focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/30"
                       aria-label="From date and time"
                     />
                     <span className="text-[11px] text-slate-400 font-semibold">to</span>
@@ -960,7 +960,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                       type="datetime-local"
                       value={customTo}
                       onChange={(e) => setCustomTo(e.target.value)}
-                      className="h-7 text-[11px] border border-slate-300 rounded-md px-1.5 text-slate-700 focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/30"
+                      className="h-7 text-[11px] border border-slate-300 rounded-md px-1.5 text-slate-700 focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/30"
                       aria-label="To date and time"
                     />
                     {(customFrom || customTo) && (
@@ -984,13 +984,13 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                     placeholder="Search customer, model, #no..."
                     value={dashSearch}
                     onChange={(e) => setDashSearch(e.target.value)}
-                    className="h-7 w-full sm:w-56 bg-slate-50 border border-slate-200 rounded-full pl-8 pr-3 text-[11px] focus:outline-none focus:border-yadea-orange focus:ring-1 focus:ring-yadea-orange/40"
+                    className="h-7 w-full sm:w-56 bg-slate-50 border border-slate-200 rounded-full pl-8 pr-3 text-[11px] focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/40"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => void loadInvoices()}
-                  className="w-7 h-7 rounded-full bg-slate-50 border border-slate-200 text-slate-400 hover:text-yadea-orange hover:border-yadea-orange/50 transition flex items-center justify-center shrink-0"
+                  className="w-7 h-7 rounded-full bg-slate-50 border border-slate-200 text-slate-400 hover:text-brand-blue hover:border-brand-blue/50 transition flex items-center justify-center shrink-0"
                   aria-label="Refresh history"
                   title="Refresh"
                 >
@@ -1015,7 +1015,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         <span className="text-slate-500">
                           {m.units} unit{m.units === 1 ? '' : 's'}
                         </span>
-                        <span className="font-extrabold text-yadea-dark">Rs {formatMoney(m.revenue)}</span>
+                        <span className="font-extrabold text-brand-dark">Rs {formatMoney(m.revenue)}</span>
                       </span>
                     ))}
                   </div>
@@ -1031,7 +1031,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                       {loadingList ? '...' : dashCount}
                     </span>
                   </h3>
-                  <span className="text-xs font-extrabold text-yadea-dark whitespace-nowrap">
+                  <span className="text-xs font-extrabold text-brand-dark whitespace-nowrap">
                     Rs {formatMoney(dashRevenue)}
                   </span>
                 </div>
@@ -1071,8 +1071,8 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             <tr
                               key={inv.id}
                               onClick={() => openInvoiceInEditor(inv)}
-                              className={`border-b border-slate-50 last:border-0 cursor-pointer transition hover:bg-yadea-orange/[0.04] ${
-                                editingId === inv.id ? 'bg-yadea-orange/[0.06]' : ''
+                              className={`border-b border-slate-50 last:border-0 cursor-pointer transition hover:bg-brand-blue/[0.04] ${
+                                editingId === inv.id ? 'bg-brand-blue/[0.06]' : ''
                               }`}
                               title="Open in editor"
                             >
@@ -1092,7 +1092,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                                 {inv.motorcycle || '-'}
                               </td>
                               <td className="py-2.5 pr-3 text-center font-semibold text-slate-700">{inv.qty}</td>
-                              <td className="py-2.5 pr-3 text-right font-extrabold text-yadea-dark whitespace-nowrap">
+                              <td className="py-2.5 pr-3 text-right font-extrabold text-brand-dark whitespace-nowrap">
                                 Rs {formatMoney(Number(inv.value_incl) || 0)}
                               </td>
                               <td
@@ -1127,9 +1127,9 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                 <h2 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center justify-between">
                   <span className="flex items-center gap-2">
-                    <FaFileInvoice className="text-yadea-orange" /> Invoice Entry
+                    <FaFileInvoice className="text-brand-blue" /> Invoice Entry
                   </span>
-                  <span className="text-[10px] bg-yadea-orange/10 text-yadea-dark border border-yadea-orange/25 px-2 py-0.5 rounded font-bold">
+                  <span className="text-[10px] bg-brand-blue/10 text-brand-dark border border-brand-blue/25 px-2 py-0.5 rounded font-bold">
                     Live Preview
                   </span>
                 </h2>
@@ -1142,7 +1142,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         type="text"
                         value={form.invoiceNo}
                         onChange={setField('invoiceNo')}
-                        className="w-full p-2 border border-slate-300 rounded font-mono font-bold text-slate-800 focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                        className="w-full p-2 border border-slate-300 rounded font-mono font-bold text-slate-800 focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                       />
                     </label>
                     <label className="block">
@@ -1152,7 +1152,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         placeholder="DD/MM/YYYY"
                         value={form.dated}
                         onChange={setField('dated')}
-                        className="w-full p-2 border border-slate-300 rounded focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                        className="w-full p-2 border border-slate-300 rounded focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                       />
                     </label>
                   </div>
@@ -1163,7 +1163,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                       type="text"
                       value={form.strn}
                       onChange={setField('strn')}
-                      className="w-full p-2 border border-slate-300 rounded font-mono focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                      className="w-full p-2 border border-slate-300 rounded font-mono focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                     />
                   </label>
 
@@ -1174,7 +1174,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                       placeholder="Customer or company name"
                       value={form.ms}
                       onChange={setField('ms')}
-                      className="w-full p-2 border border-slate-300 rounded font-semibold focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                      className="w-full p-2 border border-slate-300 rounded font-semibold focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                     />
                   </label>
 
@@ -1190,17 +1190,17 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           min={1}
                           value={form.qty}
                           onChange={setField('qty')}
-                          className="w-full p-2 border border-slate-300 rounded font-bold focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                          className="w-full p-2 border border-slate-300 rounded font-bold focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                         />
                       </label>
                       <label className="block">
                         <span className="block text-slate-600 mb-1">Motorcycle</span>
                         <input
                           type="text"
-                          placeholder="Yadea T9 Scooter"
+                          placeholder="Expert Builders Project"
                           value={form.motorcycle}
                           onChange={setField('motorcycle')}
-                          className="w-full p-2 border border-slate-300 rounded focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                          className="w-full p-2 border border-slate-300 rounded focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                         />
                       </label>
                     </div>
@@ -1212,7 +1212,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           placeholder="2026"
                           value={form.year}
                           onChange={setField('year')}
-                          className="w-full p-2 border border-slate-300 rounded focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                          className="w-full p-2 border border-slate-300 rounded focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                         />
                       </label>
                       <label className="block">
@@ -1222,7 +1222,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           placeholder="Metallic Grey"
                           value={form.color}
                           onChange={setField('color')}
-                          className="w-full p-2 border border-slate-300 rounded focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                          className="w-full p-2 border border-slate-300 rounded focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                         />
                       </label>
                     </div>
@@ -1233,7 +1233,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           type="text"
                           value={form.engine}
                           onChange={setField('engine')}
-                          className="w-full p-2 border border-slate-300 rounded font-mono text-[11px] focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                          className="w-full p-2 border border-slate-300 rounded font-mono text-[11px] focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                         />
                       </label>
                       <label className="block">
@@ -1242,7 +1242,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           type="text"
                           value={form.chassis}
                           onChange={setField('chassis')}
-                          className="w-full p-2 border border-slate-300 rounded font-mono text-[11px] focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                          className="w-full p-2 border border-slate-300 rounded font-mono text-[11px] focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                         />
                       </label>
                     </div>
@@ -1262,7 +1262,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         placeholder="e.g. 245000"
                         value={form.valueExcl}
                         onChange={setField('valueExcl')}
-                        className="w-full p-2 border border-slate-300 rounded font-bold text-sm text-slate-800 focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                        className="w-full p-2 border border-slate-300 rounded font-bold text-sm text-slate-800 focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                       />
                     </label>
                     <div className="grid grid-cols-2 gap-2 mt-2">
@@ -1273,7 +1273,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           step="0.5"
                           value={form.taxRate}
                           onChange={setField('taxRate')}
-                          className="w-full p-2 border border-slate-300 rounded font-semibold focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/40"
+                          className="w-full p-2 border border-slate-300 rounded font-semibold focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
                         />
                       </label>
                       <div>
@@ -1283,11 +1283,11 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-2.5 bg-yadea-orange/10 p-2.5 rounded-lg border border-yadea-orange/25">
-                      <span className="block text-yadea-dark mb-1 text-[11px] font-bold">
+                    <div className="mt-2.5 bg-brand-blue/10 p-2.5 rounded-lg border border-brand-blue/25">
+                      <span className="block text-brand-dark mb-1 text-[11px] font-bold">
                         Total Value Including Sales Tax
                       </span>
-                      <div className="w-full p-2 bg-white border border-yadea-orange rounded font-black text-yadea-dark text-base text-right">
+                      <div className="w-full p-2 bg-white border border-brand-blue rounded font-black text-brand-dark text-base text-right">
                         Rs {formatMoney(totalIncl)}
                       </div>
                     </div>
@@ -1296,12 +1296,12 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
               </div>
 
               {/* Saved invoices live in the Invoice Dashboard (top button). */}
-              <div className="bg-yadea-orange/[0.06] border border-yadea-orange/20 rounded-xl p-4 text-xs">
+              <div className="bg-brand-blue/[0.06] border border-brand-blue/20 rounded-xl p-4 text-xs">
                 <div className="font-bold text-slate-800 flex items-center gap-2 mb-1">
-                  <FaChartLine className="text-yadea-orange" /> Looking for saved invoices?
+                  <FaChartLine className="text-brand-blue" /> Looking for saved invoices?
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Open the <button type="button" onClick={() => setView('dashboard')} className="font-bold text-yadea-dark underline underline-offset-2 hover:text-yadea-orange">Invoice Dashboard</button> from
+                  Open the <button type="button" onClick={() => setView('dashboard')} className="font-bold text-brand-dark underline underline-offset-2 hover:text-brand-blue">Invoice Dashboard</button> from
                   the top bar to browse full history with date filters and prices.
                 </p>
               </div>
@@ -1314,7 +1314,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                   className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-slate-800 hover:bg-slate-50 transition"
                 >
                   <span className="flex items-center gap-2">
-                    <FaPalette className="text-yadea-orange" /> Design Studio
+                    <FaPalette className="text-brand-blue" /> Design Studio
                   </span>
                   <span className="text-[10px] font-medium text-slate-400">
                     {designOpen ? 'Hide' : 'Colours · Layout · Sections'}
@@ -1368,7 +1368,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                               onClick={() => updDesign({ logoSide: side })}
                               className={`px-3 py-1 font-bold capitalize transition ${
                                 design.logoSide === side
-                                  ? 'bg-yadea-orange text-white'
+                                  ? 'bg-brand-blue text-white'
                                   : 'bg-white text-slate-600 hover:bg-slate-50'
                               }`}
                             >
@@ -1387,7 +1387,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                               onClick={() => updDesign({ titleAlign: align })}
                               className={`px-3 py-1 font-bold capitalize transition ${
                                 design.titleAlign === align
-                                  ? 'bg-yadea-orange text-white'
+                                  ? 'bg-brand-blue text-white'
                                   : 'bg-white text-slate-600 hover:bg-slate-50'
                               }`}
                             >
@@ -1403,7 +1403,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             type="button"
                             onClick={() => updDesign({ pillRound: true })}
                             className={`px-3 py-1 font-bold transition ${
-                              design.pillRound ? 'bg-yadea-orange text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                              design.pillRound ? 'bg-brand-blue text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
                             }`}
                           >
                             Round
@@ -1412,7 +1412,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             type="button"
                             onClick={() => updDesign({ pillRound: false })}
                             className={`px-3 py-1 font-bold transition ${
-                              !design.pillRound ? 'bg-yadea-orange text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                              !design.pillRound ? 'bg-brand-blue text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
                             }`}
                           >
                             Square
@@ -1439,7 +1439,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             max={max}
                             value={design[key]}
                             onChange={(e) => updDesign({ [key]: Number(e.target.value) } as Partial<InvoiceDesign>)}
-                            className="flex-1 accent-yadea-orange cursor-pointer"
+                            className="flex-1 accent-brand-blue cursor-pointer"
                             aria-label={label}
                           />
                           <span className="w-8 text-right font-mono text-[10px] text-slate-500">{design[key]}</span>
@@ -1463,7 +1463,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             type="checkbox"
                             checked={design[key]}
                             onChange={(e) => updDesign({ [key]: e.target.checked } as Partial<InvoiceDesign>)}
-                            className="w-4 h-4 accent-yadea-orange cursor-pointer"
+                            className="w-4 h-4 accent-brand-blue cursor-pointer"
                           />
                         </label>
                       ))}
@@ -1472,7 +1472,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                     <button
                       type="button"
                       onClick={() => setDesign(DEFAULT_DESIGN)}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-md border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 hover:text-yadea-dark transition"
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-md border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 hover:text-brand-dark transition"
                     >
                       <FaRotateRight className="text-[10px]" /> Reset design
                     </button>
@@ -1482,7 +1482,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
               <div className="bg-slate-900 text-slate-300 rounded-xl p-4 text-xs space-y-1.5 shadow-sm">
                 <div className="font-bold text-white flex items-center gap-1.5">
-                  <FaCircleInfo className="text-yadea-orange text-sm" /> Live Interactive Editor
+                  <FaCircleInfo className="text-brand-blue text-sm" /> Live Interactive Editor
                 </div>
                 <p className="leading-relaxed">
                   Fill the form above or type directly on any dotted line inside the document
@@ -1576,7 +1576,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           >
                             Invoice From:
                           </h3>
-                          <p className="font-bold text-slate-800">Yadea Hussain Motors</p>
+                          <p className="font-bold text-slate-800">Expert Builders & Developers</p>
                           <input
                             type="text"
                             placeholder="Shop address"
@@ -1753,7 +1753,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                                 </li>
                                 <li className="flex gap-1.5">
                                   <span>2.</span>
-                                  <span>Warranty and service claims are processed as per official Yadea Hussain Motors policy.</span>
+                                  <span>Warranty and service claims are processed as per official Expert Builders & Developers policy.</span>
                                 </li>
                               </ol>
                             </div>
@@ -1824,7 +1824,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                               className="text-base md:text-lg font-black tracking-tight"
                               style={{ color: elO('signature').colorA ?? design.accentColor }}
                             >
-                              Yadea Hussain Motors
+                              Expert Builders & Developers
                             </h3>
                           </div>
                           <div className="text-center w-48">
@@ -1930,7 +1930,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                 type="button"
                 onClick={() => setElO(sel, { align: a })}
                 className={`px-2 py-0.5 rounded font-bold transition ${
-                  elO(sel).align === a ? 'bg-yadea-orange text-white' : 'bg-slate-700 hover:bg-slate-600'
+                  elO(sel).align === a ? 'bg-brand-blue text-white' : 'bg-slate-700 hover:bg-slate-600'
                 }`}
               >
                 {a[0].toUpperCase()}

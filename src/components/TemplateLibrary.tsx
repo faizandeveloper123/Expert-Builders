@@ -91,10 +91,10 @@ export function removeTemplateFromLibrary(id: string): void {
   }
 }
 
-/** Yadea-branded header image (orange gradient + scooter mark) as a data URI. */
-export function buildYadeaHeaderImage(title: string) {
+/** Expert Builders-branded header image (brand gradient + mark) as a data URI. */
+export function buildBrandHeaderImage(title: string) {
   const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='800' height='300'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#EB5F1B'/><stop offset='100%' stop-color='#7c2d12'/></linearGradient></defs><rect width='800' height='300' fill='url(#g)'/><circle cx='96' cy='260' r='48' fill='none' stroke='rgba(255,255,255,0.18)' stroke-width='2'/><circle cx='96' cy='260' r='72' fill='none' stroke='rgba(255,255,255,0.10)' stroke-width='2'/><g stroke='#fff' stroke-width='6' stroke-linecap='round' fill='none' opacity='0.92'><circle cx='590' cy='232' r='30'/><circle cx='735' cy='232' r='30'/><path d='M590 232 L707 226'/><path d='M698 226 L698 132'/><path d='M678 132 L720 132'/><path d='M698 132 L660 170'/><path d='M678 132 L642 168'/></g><text x='330' y='118' fill='#fff' font-family='Arial, sans-serif' font-size='34' font-weight='800' text-anchor='middle'>${safeTitle}</text><text x='330' y='152' fill='rgba(255,255,255,0.75)' font-family='Arial, sans-serif' font-size='15' text-anchor='middle'>Join the Yadea family</text></svg>`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='800' height='300'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#0A58A3'/><stop offset='100%' stop-color='#0A4A8C'/></linearGradient></defs><rect width='800' height='300' fill='url(#g)'/><circle cx='96' cy='260' r='48' fill='none' stroke='rgba(255,255,255,0.18)' stroke-width='2'/><circle cx='96' cy='260' r='72' fill='none' stroke='rgba(255,255,255,0.10)' stroke-width='2'/><g stroke='#fff' stroke-width='6' stroke-linecap='round' fill='none' opacity='0.92'><circle cx='590' cy='232' r='30'/><circle cx='735' cy='232' r='30'/><path d='M590 232 L707 226'/><path d='M698 226 L698 132'/><path d='M678 132 L720 132'/><path d='M698 132 L660 170'/><path d='M678 132 L642 168'/></g><text x='330' y='118' fill='#fff' font-family='Arial, sans-serif' font-size='34' font-weight='800' text-anchor='middle'>${safeTitle}</text><text x='330' y='152' fill='rgba(255,255,255,0.75)' font-family='Arial, sans-serif' font-size='15' text-anchor='middle'>Join the Expert Builders team</text></svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
@@ -247,7 +247,7 @@ const TEMPLATES: FormTemplate[] = [
     title: 'Dealership Registration',
     category: 'Automotive',
     color: 'Orange',
-    colorHex: '#EB5F1B',
+    colorHex: '#0A58A3',
     trending: true,
     recentlyAdded: true,
     rating: '5.0',
@@ -255,8 +255,8 @@ const TEMPLATES: FormTemplate[] = [
     createdAt: '2026-08-20',
     isFavorite: false,
     isMine: true,
-    image: buildYadeaHeaderImage('DEALERSHIP REGISTRATION'),
-    accentColor: 'bg-[#EB5F1B]',
+    image: buildBrandHeaderImage('DEALERSHIP REGISTRATION'),
+    accentColor: 'bg-[#0A58A3]',
     headerText: 'DEALERSHIP REGISTRATION',
     elements: [
       { label: 'Name', type: 'text', placeholder: 'Enter your full name', required: true },

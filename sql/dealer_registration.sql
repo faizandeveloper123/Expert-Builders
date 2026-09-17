@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Dealer self-registration via website form
+--  EXPERT BUILDERS CRM - Dealer self-registration via website form
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:

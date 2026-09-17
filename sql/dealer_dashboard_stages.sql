@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Dealer Lead STAGE Pipeline (v2)
+--  EXPERT BUILDERS CRM - Dealer Lead STAGE Pipeline (v2)
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Replaces the simple status enum with a full stage pipeline so

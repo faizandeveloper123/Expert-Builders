@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { FaCircleCheck, FaPaperPlane } from 'react-icons/fa6';
 import { api } from '../api';
-import YadeaLogo from './YadeaLogo';
+import BrandLogo from './BrandLogo';
 import { PROVINCES, citiesForProvince } from '../data/pakistanCities';
 
 /**
@@ -15,9 +15,9 @@ import { PROVINCES, citiesForProvince } from '../data/pakistanCities';
 type Kind = 'dealership' | 'inquiry';
 
 const inputCls =
-  'w-full bg-slate-50 border border-transparent focus:border-yadea-orange focus:bg-white rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder-slate-400';
+  'w-full bg-slate-50 border border-transparent focus:border-brand-blue focus:bg-white rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder-slate-400';
 const inputPlainCls =
-  'w-full bg-white border border-slate-300 focus:border-yadea-orange rounded-lg px-4 py-3 text-sm text-slate-800 outline-none transition placeholder-slate-400 shadow-sm';
+  'w-full bg-white border border-slate-300 focus:border-brand-blue rounded-lg px-4 py-3 text-sm text-slate-800 outline-none transition placeholder-slate-400 shadow-sm';
 
 function Shell({ kind, children }: { kind: Kind; children: React.ReactNode }) {
   const isDealer = kind === 'dealership';
@@ -27,8 +27,8 @@ function Shell({ kind, children }: { kind: Kind; children: React.ReactNode }) {
       <div className="bg-slate-900">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <YadeaLogo wordmark={false} className="h-5 w-auto" />
-            <span className="text-sm font-black uppercase tracking-wide text-white">Agency</span>
+            <BrandLogo wordmark={false} className="h-5 w-auto" />
+            <span className="text-sm font-black uppercase tracking-wide text-white">Expert Builders</span>
           </div>
           <span className="text-[11px] text-slate-400 font-medium">
             {isDealer ? 'Partner Portal' : 'Support Portal'}
@@ -51,8 +51,8 @@ function Shell({ kind, children }: { kind: Kind; children: React.ReactNode }) {
           </h1>
           <p className="text-slate-300 mt-2 text-xs md:text-sm font-light max-w-xl mx-auto">
             {isDealer
-              ? 'Join the world\'s leading electric two-wheeler network and drive sustainable mobility forward.'
-              : 'Dedicated customer care and technical support for your Yadea EV experience.'}
+              ? 'Join our network of trusted partners and grow with Expert Builders & Developers.'
+              : 'Dedicated customer care and technical support for your Expert Builders experience.'}
           </p>
         </div>
       </div>
@@ -60,7 +60,7 @@ function Shell({ kind, children }: { kind: Kind; children: React.ReactNode }) {
       <div className="flex-1">{children}</div>
 
       <footer className="py-4 text-center text-[11px] text-slate-400">
-        © {new Date().getFullYear()} Yadea Hussain Motors
+        © {new Date().getFullYear()} Expert Builders & Developers
       </footer>
     </div>
   );
@@ -76,10 +76,10 @@ function SuccessCard({ code, kind }: { code: string; kind: Kind }) {
         </h2>
         <p className="text-sm text-slate-600 mt-2 leading-relaxed">
           {kind === 'dealership'
-            ? 'Thank you for your interest in partnering with Yadea. Our team will review your application and get back to you soon.'
+            ? 'Thank you for your interest in partnering with Expert Builders & Developers. Our team will review your application and get back to you soon.'
             : 'We have received your support ticket and will respond within 48 business hours.'}
         </p>
-        <p className="mt-4 inline-block bg-slate-100 border border-slate-200 rounded-lg px-4 py-2 text-sm font-mono font-bold text-yadea-dark">
+        <p className="mt-4 inline-block bg-slate-100 border border-slate-200 rounded-lg px-4 py-2 text-sm font-mono font-bold text-brand-dark">
           Reference: {code}
         </p>
       </div>
@@ -266,7 +266,7 @@ export function PublicDealershipFormPage() {
               </div>
 
               <label className="flex items-start gap-2 pt-1 cursor-pointer">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-yadea-orange cursor-pointer" />
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-brand-blue cursor-pointer" />
                 <span className="text-xs text-slate-600 leading-relaxed">
                   I have read the Privacy Policy and accept the processing of data for the purposes indicated.
                 </span>
@@ -277,7 +277,7 @@ export function PublicDealershipFormPage() {
                   type="button"
                   onClick={() => void submit()}
                   disabled={saving}
-                  className="w-full md:w-1/2 bg-yadea-orange hover:bg-yadea-dark text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition uppercase tracking-wider text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full md:w-1/2 bg-brand-blue hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition uppercase tracking-wider text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FaPaperPlane className="text-xs" />
                   {saving ? 'Sending…' : 'Send'}
@@ -354,7 +354,7 @@ export function PublicInquiryFormPage() {
               Submit A Ticket
             </h3>
             <p className="text-[11px] text-slate-500 text-center leading-relaxed mb-5">
-              Improve your experience with Yadea by taking just a few moments to register your product.
+              Improve your experience with Expert Builders by taking just a few moments to register your product or project.
               We will come back to you in a maximum of 48 business hours.
             </p>
 
@@ -381,7 +381,7 @@ export function PublicInquiryFormPage() {
               <textarea rows={4} value={form.custReason} onChange={setField('custReason')} placeholder="Tell Us Your Reason *" className={`${inputPlainCls} resize-none`} />
 
               <label className="flex items-start gap-2 pt-1 cursor-pointer">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-yadea-orange cursor-pointer" />
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-brand-blue cursor-pointer" />
                 <span className="text-xs text-slate-600 leading-relaxed">
                   I have read the Privacy Policy and accept the processing of data for the purposes indicated.
                 </span>
@@ -392,7 +392,7 @@ export function PublicInquiryFormPage() {
                   type="button"
                   onClick={() => void submit()}
                   disabled={saving}
-                  className="w-full md:w-1/2 bg-yadea-orange hover:bg-yadea-dark text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition uppercase tracking-wider text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full md:w-1/2 bg-brand-blue hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition uppercase tracking-wider text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FaPaperPlane className="text-xs" />
                   {saving ? 'Sending…' : 'Send'}

@@ -799,7 +799,7 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
                 </div>
                 <div>
                   <label className={labelCls}>Business name</label>
-                  <input type="text" value={fields.business} onChange={set('business')} className={inputCls} placeholder="Evee Motors" />
+                  <input type="text" value={fields.business} onChange={set('business')} className={inputCls} placeholder="Expert Builders" />
                 </div>
                 <div>
                   <label className={labelCls}>Website</label>

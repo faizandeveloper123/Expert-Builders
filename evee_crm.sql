@@ -48,7 +48,7 @@ CREATE TABLE `appointments` (
 --
 
 INSERT INTO `appointments` (`id`, `contact_id`, `title`, `calendar`, `host`, `date`, `start_time`, `end_time`, `location`, `status`, `notes`, `category`, `created_at`) VALUES
-(3, 12, 'Test Ride & Sales Consultation', 'Sales Consultation Calendar', 'Asad B Zaman', '2026-08-08', '10:00 AM', '10:30 AM', 'Google Meet Video Link', 'Completed', 'Customer requested a test ride for Evee electric scooter model.', 'past', '2026-08-09 17:58:29'),
+(3, 12, 'Test Ride & Sales Consultation', 'Sales Consultation Calendar', 'Asad B Zaman', '2026-08-08', '10:00 AM', '10:30 AM', 'Google Meet Video Link', 'Completed', 'Customer requested a test ride for Expert Builders consultation.', 'past', '2026-08-09 17:58:29'),
 (4, 12, 'Out of office / Slot Blocked', 'General Support Calendar', 'Asad B Zaman', '2026-08-09', '09:00 AM', '05:00 PM', 'Calendar Lock', 'Blocked', NULL, 'past', '2026-08-09 17:58:39');
 
 -- --------------------------------------------------------
@@ -80,7 +80,7 @@ CREATE TABLE `contacts` (
 --
 
 INSERT INTO `contacts` (`id`, `first_name`, `last_name`, `phone`, `email`, `business_name`, `contact_type`, `is_lead`, `avatar_color`, `avatar_data`, `notes`, `created_at`, `last_activity_at`, `updated_at`) VALUES
-(1, 'Muhammad', 'Faizan', '0371 1520951', 'faizan@gmail.com', 'Evee', 'Lead', 1, 'bg-emerald-200 text-emerald-800', NULL, NULL, '2026-08-08 15:50:00', NULL, '2026-08-08 22:41:47'),
+(1, 'Muhammad', 'Faizan', '0371 1520951', 'faizan@gmail.com', 'Expert Builders', 'Lead', 1, 'bg-emerald-200 text-emerald-800', NULL, NULL, '2026-08-08 15:50:00', NULL, '2026-08-08 22:41:47'),
 (2, 'Tahira', 'Abbas', '0371 1520051', 'orixzylum@gmail.com', NULL, '', 0, 'bg-sky-200 text-sky-800', NULL, NULL, '2026-08-08 14:06:00', NULL, '2026-08-08 22:41:47'),
 (3, '(Example) Casey', 'Mo...', '+16541234567', NULL, '(Example) Dunder Miff...', '', 0, 'bg-purple-200 text-purple-800', NULL, NULL, '2026-08-08 13:32:00', NULL, '2026-08-08 22:41:47'),
 (4, '(Example) Taylor', 'Re...', '+178655689546', NULL, '(Example) MacLaren\'s...', '', 0, 'bg-sky-200 text-sky-800', NULL, NULL, '2026-08-08 13:32:00', NULL, '2026-08-08 22:41:47'),
@@ -155,7 +155,7 @@ CREATE TABLE `opportunities` (
 --
 
 INSERT INTO `opportunities` (`id`, `contact_id`, `name`, `pipeline`, `stage`, `status`, `value`, `business_name`, `created_at`) VALUES
-(2, 12, 'John Doe', 'Marketing Pipeline', 'New Lead', 'Open', 'Rs 0', 'Evee', '2026-08-09 17:53:05');
+(2, 12, 'John Doe', 'Marketing Pipeline', 'New Lead', 'Open', 'Rs 0', 'Expert Builders', '2026-08-09 17:53:05');
 
 -- --------------------------------------------------------
 

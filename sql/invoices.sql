@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Yadea Sales Tax Invoices
+--  EXPERT BUILDERS CRM - Expert Builders Sales Tax Invoices
 --    C:\xampp\mysql\bin\mysql.exe -u root < sql\invoices.sql
 --
 --  Stores every sales tax invoice created from the Invoices

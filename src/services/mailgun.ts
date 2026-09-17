@@ -13,7 +13,7 @@
  *     dashboard.
  *  3. Replace every `YOUR_*` placeholder below with the real value.
  *  4. For INBOUND email, add the Mailgun HTTP webhook URL to your domain:
- *       http://localhost/Yadea/api/mailgun-webhook.php
+ *       http://localhost/expert-builders/api/mailgun-webhook.php
  *     (or the public URL you host the app on) and route messages to it.
  *
  *  The REST API is documented here: https://documentation.mailgun.com
@@ -43,7 +43,7 @@ export const MAILGUN_CONFIG: MailgunConfig = {
   API_KEY: 'YOUR_MAILGUN_API_KEY', // e.g. 'key-xxxxxxxxxxxxxxxxxxxxxxxx'
   API_BASE: 'https://api.mailgun.net/v3',
   FROM_EMAIL: 'YOUR_FROM_EMAIL', // e.g. 'crm@yourcompany.com'
-  FROM_NAME: 'YOUR_FROM_NAME', // e.g. 'Evee CRM'
+  FROM_NAME: 'YOUR_FROM_NAME', // e.g. 'Expert Builders CRM'
 };
 
 export interface EmailPayload {

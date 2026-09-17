@@ -8,7 +8,7 @@ export const initialContacts: Contact[] = [
     avatarColor: 'bg-emerald-200 text-emerald-800',
     phone: '0371 1520951',
     email: 'faizan@gmail.com',
-    businessName: 'Evee',
+    businessName: 'Expert Builders & Developers',
     createdPkt: 'Aug 8, 2026 03:50 PM',
     tags: ['warm lead'],
   },

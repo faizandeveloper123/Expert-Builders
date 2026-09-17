@@ -8,3 +8,6 @@ dist
 Evee.rar
 dev-server.log
 api/mail_secrets.php
+*.apk
+android/
+.htaccess_test/

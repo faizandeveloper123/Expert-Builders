@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Auth + Notifications Migration
+--  EXPERT BUILDERS CRM - Auth + Notifications Migration
 --  XAMPP MySQL (MariaDB 10.4+)
 --
 --  Adds:

@@ -22,9 +22,9 @@ export default {
           badge: '#eff6ff',
           badgeText: '#1d4ed8',
         },
-        yadea: {
-          orange: '#EB5F1B',
-          dark: '#c94e15',
+        brand: {
+          blue: '#0A58A3',
+          dark: '#0A4A8C',
           black: '#111827',
         },
       },

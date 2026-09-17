@@ -50,7 +50,7 @@ function AddOpportunityModal({ contactName, email, phone, onClose, onSave }: Add
     stage: 'New Lead',
     status: 'Open',
     value: 'Rs 0',
-    business_name: 'Evee',
+    business_name: 'Expert Builders & Developers',
     source: '',
     expected_close_date: '',
     tags: [],

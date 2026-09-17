@@ -11,7 +11,7 @@
  *  To activate:
  *    1. In Mailgun Dashboard -> Sending -> Domains -> your domain -> Webhooks,
  *       add the "Incoming Email" (Received) webhook pointing to:
- *           http://localhost/Evee/api/mailgun-webhook.php
+ *           http://localhost/expert-builders/api/mailgun-webhook.php
  *       (or the public URL where this project is hosted).
  *    2. Replace the MAILGUN_SIGNING_KEY placeholder below with your real
  *       Mailgun webhook signing key so messages are verified.

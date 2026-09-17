@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Campaigns (for Active / Paused / Canceled / Finished campaign filters)
+--  EXPERT BUILDERS CRM - Campaigns (for Active / Paused / Canceled / Finished campaign filters)
 --  Safe to re-run: CREATE TABLE IF NOT EXISTS + idempotent seed
 --  Run with: E:\xampp\mysql\bin\mysql.exe -u root < sql\campaigns.sql
 -- ============================================================

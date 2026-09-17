@@ -1,5 +1,5 @@
 -- ============================================================
---  EVEE CRM - Form submission data on leads
+--  EXPERT BUILDERS CRM - Form submission data on leads
 --  Run AFTER contacts_extended.sql (custom_fields column)
 --    C:\xampp\mysql\bin\mysql.exe -u root < sql\form_submissions.sql
 --
