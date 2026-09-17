@@ -54,7 +54,7 @@ function LoginPage({ onSuccess }: LoginPageProps) {
         />
 
         <div className="relative flex items-center space-x-2.5">
-          <BrandLogo wordmark={false} className="h-9 w-auto" />
+          <BrandLogo wordmark={false} className="h-12 w-12" />
           <span className="text-xl font-bold tracking-tight">Expert Builders</span>
         </div>
 
@@ -94,7 +94,7 @@ function LoginPage({ onSuccess }: LoginPageProps) {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center space-x-2.5 mb-8 justify-center">
-            <BrandLogo wordmark={false} className="h-9 w-auto" />
+            <BrandLogo wordmark={false} className="h-12 w-12" />
             <span className="text-2xl font-bold text-slate-800 tracking-tight">Expert Builders</span>
           </div>
 

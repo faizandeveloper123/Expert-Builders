@@ -27,7 +27,7 @@ function Shell({ kind, children }: { kind: Kind; children: React.ReactNode }) {
       <div className="bg-slate-900">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BrandLogo wordmark={false} className="h-5 w-auto" />
+            <BrandLogo wordmark={false} className="h-9 w-9" />
             <span className="text-sm font-black uppercase tracking-wide text-white">Expert Builders</span>
           </div>
           <span className="text-[11px] text-slate-400 font-medium">

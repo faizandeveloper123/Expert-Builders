@@ -717,7 +717,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
     <div {...regionProps('lockup')}>
       <div className="flex flex-col items-center shrink-0 mt-[20px] ml-[20px]">
         <div className="flex items-end" style={{ height: design.iconSize }}>
-          <BrandLogo wordmark={false} className="h-full w-auto" />
+          <BrandLogo wordmark={false} chip={false} className="h-full w-auto" />
         </div>
         <span
           className="leading-none font-black uppercase tracking-[0.05em] mt-1.5"
@@ -822,7 +822,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
           <div className="inv-no-print sticky top-0 z-30 -mx-3 md:-mx-6 px-3 md:px-6 pt-4 pb-3 mb-5 bg-slate-100/85 backdrop-blur-md border-b border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-brand-black flex items-center justify-center shadow-md shadow-slate-900/20 ring-1 ring-black/10">
-                <BrandLogo wordmark={false} className="h-7 w-auto" />
+                <BrandLogo wordmark={false} chip={false} className="h-[62%] w-auto" />
               </div>
               <div>
                 <h1 className="text-lg font-extrabold text-slate-900 leading-tight">

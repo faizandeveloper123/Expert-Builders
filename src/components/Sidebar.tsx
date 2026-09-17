@@ -138,9 +138,9 @@ function Sidebar({
           <div className="flex items-center space-x-2.5">
             <div className="flex items-center justify-center pl-1">
               {collapsed ? (
-                <BrandLogo wordmark={false} className="h-5 w-auto" />
+                <BrandLogo wordmark={false} className="h-10 w-10" />
               ) : (
-                <BrandLogo className="h-6 w-auto" />
+                <BrandLogo className="h-10 w-10" />
               )}
             </div>
           </div>
