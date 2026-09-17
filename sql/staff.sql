@@ -112,11 +112,11 @@ WHERE is_lead = 1
 INSERT INTO staff_users
   (first_name, last_name, email, phone, extension, user_type, system_id, calendar, restrict_data, signature, permissions)
 VALUES
-  ('X', 'Y', 'xy@gmail.com', '+92 371 1520953', '101', 'Admin',
+  ('X', 'Y', 'xy@expertbuilders.com', '+92 371 1520953', '101', 'Admin',
    'FMmFaJdx3TCeG5kb61Ab', 'Main Sales Calendar', 0,
    '<p>Best regards,<br/><strong>X Y</strong><br/>Account Executive</p>',
    NULL),
-  ('Sarah', 'Jenkins', 'sarah.j@hifimarketing.com', '+92 321 9876543', '104', 'User',
+  ('Sarah', 'Jenkins', 'sarah@expertbuilders.com', '+92 321 9876543', '104', 'User',
    'K9mPqRst7UVwX8yz12Ab', 'Customer Care Calendar', 1,
    '<p>Regards,<br/><strong>Sarah Jenkins</strong><br/>Support Specialist</p>',
    NULL)

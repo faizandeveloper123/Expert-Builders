@@ -125,7 +125,7 @@ RECENT WORK (Aug 13, 2026)
               unread count every 30s, opens a dropdown, fires browser
               Notification API alerts, and the server attempts a best-effort
               email copy (send_notification_email).
-            - HOW TO LOGIN: yadeapakistan@gmail.com / FWAER@#$R (main Admin, "Yadea Admin").
+            - HOW TO LOGIN: expertdevelopers@gmail.com / Expertbuilders@2026 (main Admin, "Admin Expert Builders").
               New users created under Settings -> My Staff log in with the email
               & password set at creation and only see what their permissions allow.
               The Admin can use the profile menu -> "Login as" to view the app as

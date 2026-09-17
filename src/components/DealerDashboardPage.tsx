@@ -26,7 +26,7 @@ import { api, type DealerDashboardDealer, type DealerLead, type DealerLeadFilter
 import { useAuth } from '../auth';
 import { formatDbDate } from '../utils';
 
-const OWNER_EMAIL = 'yadeapakistan@gmail.com';
+const OWNER_EMAIL = 'expertdevelopers@gmail.com';
 
 const STATUS_META: Record<DealerLeadStatus, { label: string; className: string; dot: string; hint: string }> = {
   non_contacted: { label: 'Non-Contacted', className: 'bg-slate-100 text-slate-600 border-slate-200', dot: 'bg-slate-400', hint: 'Not contacted yet' },

@@ -1311,12 +1311,12 @@ UPDATE contacts SET custom_fields = JSON_OBJECT(
 /* ========================================================================== */
 
 INSERT INTO staff_users (first_name, last_name, email, user_type, restrict_data, password, password_plain, approved) VALUES
-('Admin', 'Expert Builders', 'hifimarketing.co@gmail.com', 'Admin', 0,
-'$2y$10$Zs6gJJsjGisbnB5s9ZP2AuUNynNyYfABRjqIjJK4jT.P.0lHIcVl.',
-'FWAER@#$R', 1)
+('Admin', 'Expert Builders', 'expertdevelopers@gmail.com', 'Admin', 0,
+'$2y$10$NSErJlyuCdtFvjSZ2JRhre1Kgu3jAAtSCxZCqu0sAH/0inOSP/lu.',
+'Expertbuilders@2026', 1)
 ON DUPLICATE KEY UPDATE
-  password='$2y$10$Zs6gJJsjGisbnB5s9ZP2AuUNynNyYfABRjqIjJK4jT.P.0lHIcVl.',
-  password_plain='FWAER@#$R',
+  password='$2y$10$NSErJlyuCdtFvjSZ2JRhre1Kgu3jAAtSCxZCqu0sAH/0inOSP/lu.',
+  password_plain='Expertbuilders@2026',
   approved=1,
   user_type='Admin',
   first_name='Admin',

@@ -35,7 +35,7 @@ import UserMenu from '../UserMenu';
 
 const STORAGE_KEY = 'evee_dashboard_widgets_v3';
 
-const OWNER_EMAIL = 'yadeapakistan@gmail.com';
+const OWNER_EMAIL = 'expertdevelopers@gmail.com';
 
 const SIZE_CLASS: Record<WidgetInstance['size'], string> = {
   sm: 'col-span-6 sm:col-span-3',
