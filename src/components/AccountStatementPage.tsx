@@ -8,7 +8,6 @@ import {
   FaRegTrashCan,
   FaRotateRight,
   FaListOl,
-  FaCircleCheck,
 } from 'react-icons/fa6';
 import { api, type ApiAccountStatement, type ApiStatementRow, type StatementRowInput } from '../api';
 import { useAuth } from '../auth';
@@ -140,6 +139,21 @@ const MEMBER_FIELDS: { key: keyof ApiAccountStatement; label: string }[] = [
   { key: 'phone_no', label: 'Phone No' },
   { key: 'street', label: 'Street' },
   { key: 'file_status', label: 'File Status' },
+];
+
+const MEMBER_LABEL: Record<string, string> = Object.fromEntries(
+  MEMBER_FIELDS.map((f) => [f.key, f.label])
+);
+
+/** Excel rows 7..13 laid out as left/right label+value pairs. */
+const FIELDS_PAIRS: [keyof ApiAccountStatement | null, keyof ApiAccountStatement | null][] = [
+  ['registration_no', 'booking_date'],
+  ['member_name', 'file_no'],
+  ['so', 'plot_size'],
+  ['cnic', 'file_type'],
+  ['address', 'block'],
+  ['phone_no', 'street'],
+  [null, 'file_status'],
 ];
 
 export default function AccountStatementPage({ onNotify }: AccountStatementPageProps) {
@@ -379,6 +393,35 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
   const cellInput = (cls = '') =>
     `w-full bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#0B5EA8]/40 rounded font-semibold text-[#1F2937] placeholder:text-slate-400 ${cls}`;
 
+  /* One labeled editable cell of the member info grid (Excel rows 7..13). */
+  function FieldCell({
+    label,
+    value,
+    onChange,
+  }: {
+    label: string;
+    value: string;
+    onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  }) {
+    return (
+      <>
+        <div
+          className="px-2 py-1.5 w-32 shrink-0 text-[10px] font-extrabold uppercase tracking-wide flex items-center"
+          style={{ backgroundColor: XLS.rowFillA, color: '#1F2937', borderRight: `1px solid ${XLS.rule}` }}
+        >
+          {label}
+        </div>
+        <input
+          type="text"
+          value={value}
+          onChange={onChange}
+          placeholder="—"
+          className={cellInput('flex-1')}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <style>{`
@@ -561,160 +604,132 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
   /* -------- the actual Excel-style sheet (kept inside the component scope) -------- */
   function SheetView() {
     if (!active) return null;
+
+    const totalDue = draftRows.reduce((s, r) => s + parseNum(r.dueAmount), 0);
+
     return (
       <div className="as-scroll-host overflow-x-auto pb-6">
         <div
           ref={sheetRef}
-          className="as-sheet bg-white shadow-xl shadow-slate-900/10 rounded-xl ring-1 ring-slate-200 text-[#1F2937] w-full min-w-[1150px] overflow-hidden"
-          style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}
+          className="as-sheet bg-white shadow-xl shadow-slate-900/10 rounded-xl ring-1 ring-slate-200 text-[#1F2937] w-full min-w-[1180px] overflow-hidden"
+          style={{ fontFamily: "Arial, 'Segoe UI', sans-serif" }}
         >
-          {/* Title band */}
-          <div className="flex items-center justify-between px-5 py-3" style={{ backgroundColor: XLS.header }}>
-            <div className="flex items-center gap-2.5 text-white">
-              <span className="text-base font-black uppercase tracking-wide">
-                Expert Marketing And Developer&apos;s
-              </span>
-              <span className="opacity-60 text-[10px] font-bold tracking-wide hidden lg:inline">
-                ABDUL MAJEED PLAZA, MAIN CHAKRI ROAD, PEER MEHAR ALI SHAH TOWN, RAWALPINDI.
-              </span>
-            </div>
-            <span className="text-white font-black uppercase tracking-[0.1em] text-sm bg-white/15 px-3 py-1 rounded">
-              Account Statement
-            </span>
+          {/* ===== Header block — Excel rows 1..5 ===== */}
+          <div className="pt-4 pb-0 text-center" style={{ paddingLeft: 28, paddingRight: 28 }}>
+            <h1
+              className="font-black uppercase tracking-wide leading-tight text-lg md:text-xl"
+              style={{ color: '#1F2937', fontSize: '14pt' }}
+            >
+              Expert Marketing And Developer&apos;s
+            </h1>
+            <p className="mt-0.5 text-[10px] text-slate-600 font-medium leading-snug">
+              Abdul Majeed Plaza, Main Chakri Road, Peer Mehar Ali Shah Town, Near Royal Grand
+              Marquee, Rawalpindi.
+            </p>
+            <p className="text-[10px] text-slate-700 font-bold mt-0.5">
+              Mobile # 0300-5551350&nbsp;&nbsp;|&nbsp;&nbsp;Ph: 051-5575280&nbsp;&nbsp;|&nbsp;&nbsp;Email:{' '}
+              expertbuilders39@gmail.com
+            </p>
           </div>
 
-          <div className="p-5">
-            {/* Member info grid — Excel rows 3..6 */}
+          {/* ACCOUNT STATEMENT band */}
+          <div
+            className="mt-3 text-center uppercase tracking-[0.25em]"
+            style={{ backgroundColor: XLS.header, color: '#fff', fontSize: '17pt', fontWeight: 900, padding: '4px 0', fontFamily: 'Arial, sans-serif' }}
+          >
+            Account Statement
+          </div>
+
+          <div className="p-5 pt-4">
+            {/* ===== Member info grid — Excel rows 7..13 ===== */}
             <div
-              className="grid grid-cols-4 gap-px mb-4"
+              className="grid grid-cols-2 gap-px mb-4"
               style={{ backgroundColor: XLS.rule, border: `1px solid ${XLS.rule}` }}
             >
-              {MEMBER_FIELDS.map((f) => (
+              {FIELDS_PAIRS.map(([leftKey, rightKey], rowIdx) => (
                 <div
-                  key={f.key}
+                  key={rowIdx}
                   className="flex items-stretch bg-white"
-                  style={f.key === 'file_status' ? { gridColumn: 'span 4' } : undefined}
+                  style={
+                    leftKey === null || rowIdx === FIELDS_PAIRS.length - 1
+                      ? { gridColumn: 'span 2' }
+                      : undefined
+                  }
                 >
-                  <div
-                    className="px-2 py-1.5 w-32 shrink-0 text-[10px] font-extrabold uppercase tracking-wide flex items-center"
-                    style={{ backgroundColor: XLS.header, color: '#fff' }}
-                  >
-                    {f.label}
-                  </div>
-                  <input
-                    type="text"
-                    value={String(active?.[f.key] ?? '')}
-                    onChange={patchMember(f.key)}
-                    placeholder="—"
-                    className={cellInput('flex-1')}
-                  />
+                  {leftKey === null ? null : (
+                    <FieldCell
+                      label={MEMBER_LABEL[leftKey as string]}
+                      value={String(active?.[leftKey] ?? '')}
+                      onChange={patchMember(leftKey)}
+                    />
+                  )}
+                  {rightKey === null ? null : (
+                    <FieldCell
+                      label={MEMBER_LABEL[rightKey as string]}
+                      value={String(active?.[rightKey] ?? '')}
+                      onChange={patchMember(rightKey)}
+                    />
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Summary boxes */}
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              {(
-                [
-                  { label: 'Cost of Land', value: costOfLand, note: 'Total property value (edit below)' },
-                  { label: 'Received Amount', value: receivedAmount, note: 'Auto total of paid ledger' },
-                  { label: 'Balance Amount', value: balanceAmount, note: 'Cost − received' },
-                ] as const
-              ).map((box) => (
-                <div
-                  key={box.label}
-                  className="rounded-lg overflow-hidden border"
-                  style={{ borderColor: XLS.header }}
-                >
-                  <div
-                    className="px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-center"
-                    style={{ backgroundColor: XLS.header, color: '#fff' }}
-                  >
-                    {box.label}
-                  </div>
-                  <div
-                    className="px-3 py-3 text-center"
-                    style={{ backgroundColor: XLS.rowFillB }}
-                  >
-                    {box.label === 'Cost of Land' ? (
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="text-[11px] font-black text-[#0B5EA8]">Rs</span>
-                        <input
-                          type="number"
-                          value={active.cost_of_land ? String(active.cost_of_land) : ''}
-                          onChange={patchMember('cost_of_land')}
-                          placeholder="0"
-                          className={`${cellInput('text-right')} !text-lg !font-black w-40 text-center`}
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        className={`text-lg font-black ${
-                          box.label === 'Balance Amount' && balanceAmount > 0
-                            ? 'text-red-600'
-                            : 'text-[#0B5EA8]'
-                        }`}
-                      >
-                        Rs {fmtMoney(box.value)}
-                      </div>
-                    )}
-                    <div className="text-[9px] text-slate-500 mt-0.5">{box.note}</div>
-                  </div>
+            {/* ===== Summary boxes — Excel rows 15..16 ===== */}
+            <div
+              className="grid grid-cols-3 gap-px mb-4"
+              style={{ backgroundColor: XLS.rule, border: `1px solid ${XLS.rule}` }}
+            >
+              {/* Cost of Land (A15:C16) */}
+              <div className="bg-white px-3 py-2.5" style={{ backgroundColor: XLS.rowFillB, border: '1px solid #fff' }}>
+                <div className="text-[9px] font-extrabold uppercase tracking-widest text-[#1F2937] leading-tight">
+                  Cost of Land:
                 </div>
-              ))}
-            </div>
-
-            {/* Payment progress */}
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden" style={{ backgroundColor: XLS.rowFillB }}>
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%`, backgroundColor: XLS.header }}
+                <div className="text-[15px] font-black text-[#0B5EA8] leading-tight mt-1">
+                  Rs. {fmtMoney(costOfLand)}/-
+                </div>
+                <div className="text-[8px] text-slate-500 font-semibold mt-0.5">
+                  (Exclusive of Development Charges)
+                </div>
+                <input
+                  type="number"
+                  value={active.cost_of_land ? String(active.cost_of_land) : ''}
+                  onChange={patchMember('cost_of_land')}
+                  placeholder="0"
+                  title="Edit total property value"
+                  className="w-full bg-white/70 border border-dashed border-[#0B5EA8]/50 rounded px-1.5 py-0.5 text-[10px] text-right font-black text-[#0B5EA8] focus:outline-none focus:ring-1 focus:ring-[#0B5EA8] mt-1.5"
                 />
               </div>
-              <span className="text-[11px] font-black text-[#0B5EA8] whitespace-nowrap">
-                {progress}% paid
-              </span>
-              <span
-                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 px-2 py-1 rounded border"
-                style={{ borderColor: XLS.rule }}
-              >
-                <FaCircleCheck className="text-[#0B5EA8]" />
-                Paid columns auto-sync from Receipt Vouchers
-              </span>
-            </div>
-
-            {/* Ledger tool bar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                <FaListOl className="text-[#0B5EA8]" /> Payment Schedule
-                <span className="text-[10px] bg-slate-100 border border-slate-200 text-slate-500 px-2 py-0.5 rounded font-bold">
-                  {draftRows.length} rows
-                </span>
-              </h3>
-              <div className="flex items-center gap-2">
-                {canEdit && draftRows.length === 0 && (
-                  <button
-                    type="button"
-                    onClick={() => void handleGenerateSchedule()}
-                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#0B5EA8]/10 text-[#0B5EA8] border border-[#0B5EA8]/30 rounded-lg text-[11px] font-bold transition hover:bg-[#0B5EA8]/20"
-                  >
-                    <FaPlus className="text-[10px]" /> Generate 31-Row Schedule
-                  </button>
-                )}
-                {canEdit && (
-                  <button
-                    type="button"
-                    onClick={addRow}
-                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-white border border-slate-300 text-slate-600 rounded-lg text-[11px] font-bold transition hover:border-brand-blue hover:text-brand-dark"
-                  >
-                    <FaPlus className="text-[10px]" /> Add Row
-                  </button>
-                )}
+              {/* Received Amount (D15:F16) */}
+              <div className="bg-white px-3 py-2.5" style={{ backgroundColor: XLS.rowFillB, border: '1px solid #fff' }}>
+                <div className="text-[9px] font-extrabold uppercase tracking-widest text-[#1F2937] leading-tight">
+                  Received Amount:
+                </div>
+                <div className="text-[15px] font-black text-[#0B5EA8] leading-tight mt-1">
+                  Rs. {fmtMoney(receivedAmount)}/-
+                </div>
+                <div className="text-[8px] text-slate-500 font-semibold mt-0.5">
+                  Auto total of paid ledger
+                </div>
+              </div>
+              {/* Balance Amount (G15:H16) */}
+              <div className="bg-white px-3 py-2.5" style={{ backgroundColor: XLS.rowFillB, border: '1px solid #fff' }}>
+                <div className="text-[9px] font-extrabold uppercase tracking-widest text-[#1F2937] leading-tight">
+                  Balance Amount:
+                </div>
+                <div
+                  className={`text-[15px] font-black leading-tight mt-1 ${
+                    balanceAmount > 0 ? 'text-red-600' : 'text-emerald-700'
+                  }`}
+                >
+                  Rs. {fmtMoney(balanceAmount)}/-
+                </div>
+                <div className="text-[8px] text-slate-500 font-semibold mt-0.5">
+                  {progress.toFixed(2)}% payment progress
+                </div>
               </div>
             </div>
 
-            {/* Ledger table */}
+            {/* ===== Ledger table — Excel rows 18..50 ===== */}
             <div
               className="overflow-hidden rounded-lg"
               style={{ border: `1px solid ${XLS.header}` }}
@@ -849,18 +864,19 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
                   )}
                 </tbody>
                 <tfoot>
-                  <tr style={{ backgroundColor: XLS.header }}>
-                    <td className="py-2 px-2 text-right text-[10px] uppercase tracking-wider text-white font-extrabold" colSpan={4}>
+                  {/* Totals row — Excel row 50 */}
+                  <tr style={{ backgroundColor: XLS.rowFillA }}>
+                    <td colSpan={4} className="py-2 px-2 text-right text-[10px] uppercase tracking-wider text-[#1F2937] font-extrabold">
                       Totals
                     </td>
-                    <td className="py-2 px-2 text-right text-[11px] text-white font-black">
-                      Rs {fmtMoney(draftRows.reduce((s, r) => s + parseNum(r.dueAmount), 0))}
+                    <td className="py-2 px-2 text-right text-[11px] text-[#1F2937] font-black">
+                      Rs {fmtMoney(totalDue)}
                     </td>
-                    <td className="py-2 px-2 text-right text-[11px] text-white font-black">
+                    <td className="py-2 px-2 text-right text-[11px] text-[#0B5EA8] font-black">
                       Rs {fmtMoney(receivedAmount)}
                     </td>
                     <td className="py-2 px-2" />
-                    <td className="py-2 px-2 text-right text-[11px] text-white font-black">
+                    <td className="py-2 px-2 text-right text-[11px] text-red-600 font-black">
                       Rs {fmtMoney(balanceAmount)}
                     </td>
                     {canEdit && <td className="py-2 px-2" />}
@@ -869,76 +885,115 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
               </table>
             </div>
 
-            {/* Final summary + signature row */}
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="rounded-lg border" style={{ borderColor: XLS.rule }}>
-                <div
-                  className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide"
-                  style={{ backgroundColor: XLS.rowFillB, color: XLS.header }}
-                >
-                  Final Summary
-                </div>
-                <div className="p-2 space-y-1 text-[11px] font-semibold text-slate-600">
-                  <p>
-                    Total payable: <span className="font-black text-slate-800">Rs {fmtMoney(costOfLand)}</span>
-                  </p>
-                  <p>
-                    Total received:{' '}
-                    <span className="font-black text-emerald-700">Rs {fmtMoney(receivedAmount)}</span>
-                  </p>
-                  <p>
-                    Remaining balance:{' '}
-                    <span className={`font-black ${balanceAmount > 0 ? 'text-red-600' : 'text-emerald-700'}`}>
-                      Rs {fmtMoney(balanceAmount)}
-                    </span>
-                  </p>
-                </div>
-              </div>
-              <div className="rounded-lg border" style={{ borderColor: XLS.rule }}>
-                <div
-                  className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide"
-                  style={{ backgroundColor: XLS.rowFillB, color: XLS.header }}
-                >
-                  Remarks
+            {/* ===== Remarks + Final Summary — Excel rows 52..55 ===== */}
+            <div
+              className="mt-4 grid grid-cols-2 gap-px"
+              style={{ backgroundColor: XLS.rule, border: `1px solid ${XLS.rule}` }}
+            >
+              {/* Remarks (A52:D55) */}
+              <div className="p-3" style={{ backgroundColor: XLS.rowFillB }}>
+                <div className="text-[9px] font-extrabold uppercase tracking-widest text-[#1F2937]">
+                  Remarks:
                 </div>
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={active.remarks}
                   onChange={patchMember('remarks')}
                   placeholder="Notes about this member's account..."
-                  className="w-full bg-transparent px-2 py-1 text-[11px] focus:outline-none resize-none font-semibold text-slate-700 placeholder:text-slate-400"
+                  className="w-full bg-white/60 border border-dashed border-slate-300 rounded px-2 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-[#0B5EA8] focus:bg-white resize-none font-semibold text-slate-700 placeholder:text-slate-400"
                 />
+                <div className="mt-1 text-[10px] font-bold text-slate-600 leading-relaxed">
+                  <div>
+                    Payment Progress:{' '}
+                    <span className="text-[#0B5EA8]">{progress.toFixed(2)}%</span>
+                  </div>
+                  <div className={balanceAmount > 0 ? 'text-red-600' : 'text-emerald-700'}>
+                    {balanceAmount > 0 ? '\u25CF Payment Pending' : '\u25CF Fully Paid'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Final Summary (E52:H55) */}
+              <div className="p-3" style={{ backgroundColor: XLS.rowFillB }}>
+                <div className="text-[9px] font-extrabold uppercase tracking-widest text-[#1F2937] mb-1.5">
+                  Final Summary:
+                </div>
+                {(
+                  [
+                    { label: 'Total Property Value:', value: costOfLand, cls: 'text-[#1F2937]' },
+                    { label: 'Total Amount Received:', value: receivedAmount, cls: 'text-emerald-700' },
+                    { label: 'Balance Payable:', value: balanceAmount, cls: 'text-red-600' },
+                  ] as const
+                ).map((row) => (
+                  <div key={row.label} className="flex items-center justify-between border-b border-[#9DC3E6]/40 py-1 text-[11px] font-semibold text-slate-600 last:border-0">
+                    <span>{row.label}</span>
+                    <span className={`font-black ${row.cls}`}>Rs. {fmtMoney(row.value)}/-</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-3 gap-8 text-[11px] font-bold text-slate-600 px-2">
-              <div>
-                <span className="block mb-1 text-[9px] uppercase tracking-widest text-slate-400">
-                  Prepared By
-                </span>
-                <span className="block border-b border-dotted border-slate-300 h-6" />
-              </div>
-              <div>
-                <span className="block mb-1 text-[9px] uppercase tracking-widest text-slate-400">
-                  Checked By
-                </span>
-                <span className="block border-b border-dotted border-slate-300 h-6" />
-              </div>
-              <div>
-                <span className="block mb-1 text-[9px] uppercase tracking-widest text-slate-400">
-                  Authorized By
-                </span>
-                <span className="block border-b border-dotted border-slate-300 h-6" />
-              </div>
-            </div>
-
-            <p
-              className="text-center text-[10px] italic text-slate-400 mt-5"
-              style={{ borderTop: `1px solid ${XLS.rule}`, paddingTop: 10 }}
-            >
-              This is a computer-generated document. No signature is required unless otherwise
-              specified.
+            {/* ===== Disclaimer + generated line — Excel rows 57..58 ===== */}
+            <p className="text-center text-[10px] italic text-slate-500 mt-4 leading-snug">
+              This is a computer-generated customer ledger statement. For any discrepancies, please
+              contact accounts department.
             </p>
+            <p className="text-center text-[9px] font-bold text-slate-400 mt-1">
+              Generated on: {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}{' '}
+              | Page 1 of 1
+            </p>
+
+            {/* ===== Signatures — Excel rows 60..61 ===== */}
+            <div className="mt-6 grid grid-cols-3 gap-x-8 gap-y-4 text-[11px] font-bold text-slate-600 px-2">
+              {(
+                [
+                  {
+                    label: 'Prepared By',
+                    sub: 'Accounts Department',
+                    left: true,
+                  },
+                  { label: 'Checked By', sub: 'Finance Manager', left: false },
+                  { label: 'Authorized By', sub: 'Director', left: false },
+                ] as const
+              ).map((sig) => (
+                <div key={sig.label} className={`h-14 flex flex-col ${sig.left ? 'items-start' : 'items-center'} justify-end`}>
+                  <span className="block border-b border-dotted border-slate-300 w-full h-4" />
+                  <span className="block mt-1 text-[9px] uppercase tracking-widest text-slate-400">
+                    {sig.label} · {sig.sub}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Ledger toolbar (added row) */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                <FaListOl className="text-[#0B5EA8]" /> Payment Schedule
+                <span className="text-[10px] bg-slate-100 border border-slate-200 text-slate-500 px-2 py-0.5 rounded font-bold">
+                  {draftRows.length} rows
+                </span>
+              </h3>
+              <div className="flex items-center gap-2">
+                {canEdit && draftRows.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => void handleGenerateSchedule()}
+                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-[#0B5EA8]/10 text-[#0B5EA8] border border-[#0B5EA8]/30 rounded-lg text-[11px] font-bold transition hover:bg-[#0B5EA8]/20"
+                  >
+                    <FaPlus className="text-[10px]" /> Generate 31-Row Schedule
+                  </button>
+                )}
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={addRow}
+                    className="inline-flex items-center gap-1.5 h-8 px-3 bg-white border border-slate-300 text-slate-600 rounded-lg text-[11px] font-bold transition hover:border-brand-blue hover:text-brand-dark"
+                  >
+                    <FaPlus className="text-[10px]" /> Add Row
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
