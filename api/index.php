@@ -22,6 +22,20 @@
  *  POST /api/index.php/invoices                  -> create sales tax invoice
  *  PUT  /api/index.php/invoices/{id}             -> update sales tax invoice
  *  DELETE /api/index.php/invoices/{id}           -> delete sales tax invoice
+ *  GET  /api/index.php/receipts                  -> list receipt vouchers (filters: search, created_by)
+ *  GET  /api/index.php/receipts/next-number      -> suggested next receipt number (RDC-xxxxx)
+ *  POST /api/index.php/receipts                  -> create receipt voucher
+ *  PUT  /api/index.php/receipts/{id}             -> update receipt voucher
+ *  DELETE /api/index.php/receipts/{id}           -> delete receipt voucher
+ *  GET  /api/index.php/account-statements        -> list account statements (filters: search)
+ *  GET  /api/index.php/account-statements/{id}   -> single statement + ledger rows + summaries
+ *  POST /api/index.php/account-statements        -> create account statement
+ *  PUT  /api/index.php/account-statements/{id}   -> update statement info
+ *  DELETE /api/index.php/account-statements/{id} -> delete statement
+ *  POST /api/index.php/account-statements/{id}/rows               -> add ledger row
+ *  PUT  /api/index.php/account-statements/{id}/rows/{rid}         -> update ledger row
+ *  DELETE /api/index.php/account-statements/{id}/rows/{rid}       -> delete ledger row
+ *  POST /api/index.php/account-statements/{id}/schedule           -> seed 31-row installment schedule
  *
  * POST /api/index.php/emails/send              -> send email via SMTP (crm@yadea.com.pk)
  *                                                 { to, cc?, bcc?, subject, html, from_name? }
@@ -3107,6 +3121,708 @@ function delete_invoice(int $id): void
     respond(['message' => 'Invoice deleted']);
 }
 
+/* ----------------------- RECEIPT VOUCHERS ----------------------- */
+
+/** Create the receipts table on first use so no manual SQL step is required. */
+function ensure_receipts_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    db()->exec(
+        'CREATE TABLE IF NOT EXISTS receipts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            receipt_no VARCHAR(64) NOT NULL,
+            reg_no VARCHAR(128) DEFAULT "",
+            dated VARCHAR(20) DEFAULT "",
+            received_from VARCHAR(255) DEFAULT "",
+            amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+            amount_words VARCHAR(255) DEFAULT "",
+            payment_type VARCHAR(64) DEFAULT "",
+            payment_via VARCHAR(64) DEFAULT "",
+            previous_balance DECIMAL(14,2) NOT NULL DEFAULT 0,
+            current_balance DECIMAL(14,2) NOT NULL DEFAULT 0,
+            file_details VARCHAR(255) DEFAULT "",
+            created_by INT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_receipts_no (receipt_no),
+            INDEX idx_receipts_reg (reg_no),
+            INDEX idx_receipts_created_by (created_by)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+}
+
+/** Cast a receipt row's numeric columns for the API response. */
+function receipt_payload(array $row): array
+{
+    foreach (['amount', 'previous_balance', 'current_balance'] as $k) {
+        $row[$k] = isset($row[$k]) ? (float)$row[$k] : 0.0;
+    }
+    $row['created_by'] = isset($row['created_by']) && $row['created_by'] !== null ? (int)$row['created_by'] : null;
+    return $row;
+}
+
+/**
+ * GET /receipts[?search=&created_by=]
+ * Newest first; optional search across number/customer/reg/type.
+ */
+function list_receipts(array $filters): void
+{
+    ensure_receipts_table();
+    $where = [];
+    $params = [];
+
+    if (!empty($filters['search'])) {
+        $term = '%' . $filters['search'] . '%';
+        $cols = ['receipt_no', 'reg_no', 'received_from', 'payment_type', 'payment_via'];
+        $pats = [];
+        foreach ($cols as $i => $col) {
+            $pname = ':search' . $i;
+            $params[$pname] = $term;
+            $pats[] = "$col LIKE $pname";
+        }
+        $where[] = '(' . implode(' OR ', $pats) . ')';
+    }
+    if (!empty($filters['created_by'])) {
+        $params[':created_by'] = to_int((string)$filters['created_by']);
+        $where[] = 'created_by = :created_by';
+    }
+
+    $sql = 'SELECT * FROM receipts';
+    if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
+    $sql .= ' ORDER BY id DESC';
+
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+    respond(['data' => array_map('receipt_payload', $rows), 'count' => count($rows)]);
+}
+
+/**
+ * GET /receipts/next-number
+ * Suggests the next sequential receipt number ("RDC-01462" -> "RDC-01463").
+ */
+function next_receipt_number(): void
+{
+    ensure_receipts_table();
+    $rows = db()->query('SELECT receipt_no FROM receipts')->fetchAll(PDO::FETCH_COLUMN);
+    $max = 0;
+    foreach ($rows as $no) {
+        $digits = preg_replace('/\D+/', '', (string)$no);
+        if ($digits !== '' && (int)$digits > $max) {
+            $max = (int)$digits;
+        }
+    }
+    respond(['data' => ['receipt_no' => 'RDC-' . str_pad((string)($max + 1), 5, '0', STR_PAD_LEFT)]]);
+}
+
+/** Shared insert/update column list for a receipt request body. */
+function receipt_columns(array $body): array
+{
+    $num = static function ($v): float {
+        $cleaned = preg_replace('/[^0-9.\-]/', '', (string)($v ?? 0));
+        return (float)($cleaned === '' ? 0 : $cleaned);
+    };
+
+    return [
+        'receipt_no' => trim((string)($body['receipt_no'] ?? '')),
+        'reg_no' => normalize_optional($body['reg_no'] ?? null) ?? '',
+        'dated' => normalize_optional($body['dated'] ?? null) ?? '',
+        'received_from' => normalize_optional($body['received_from'] ?? null) ?? '',
+        'amount' => $num($body['amount'] ?? 0),
+        'amount_words' => normalize_optional($body['amount_words'] ?? null) ?? '',
+        'payment_type' => normalize_optional($body['payment_type'] ?? null) ?? '',
+        'payment_via' => normalize_optional($body['payment_via'] ?? null) ?? '',
+        'previous_balance' => $num($body['previous_balance'] ?? 0),
+        'current_balance' => $num($body['current_balance'] ?? 0),
+        'file_details' => normalize_optional($body['file_details'] ?? null) ?? '',
+    ];
+}
+
+/** Recompute every account statement's paid amounts from its receipts. */
+function sync_all_account_statements(): void
+{
+    if (!table_exists('account_statements')) return;
+    $ids = db()->query('SELECT id FROM account_statements')->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($ids as $sid) {
+        sync_statement_from_receipts((int)$sid);
+    }
+}
+
+/** POST /receipts — save a new receipt voucher (auto-updates account statements). */
+function create_receipt(array $body): void
+{
+    ensure_receipts_table();
+    $c = receipt_columns($body);
+    if ($c['receipt_no'] === '') fail('Receipt number is required');
+
+    $dup = db()->prepare('SELECT id FROM receipts WHERE receipt_no = :no');
+    $dup->execute([':no' => $c['receipt_no']]);
+    if ($dup->fetchColumn() !== false) {
+        fail('A receipt with number "' . $c['receipt_no'] . '" already exists', 409);
+    }
+
+    $createdBy = isset($body['created_by']) && (int)$body['created_by'] > 0 ? (int)$body['created_by'] : null;
+
+    db()->prepare(
+        'INSERT INTO receipts (receipt_no, reg_no, dated, received_from, amount, amount_words,
+                               payment_type, payment_via, previous_balance, current_balance,
+                               file_details, created_by)
+         VALUES (:no, :reg, :dated, :from, :amount, :words, :ptype, :pvia, :prev, :curr, :fdet, :created_by)'
+    )->execute([
+        ':no' => $c['receipt_no'],
+        ':reg' => $c['reg_no'],
+        ':dated' => $c['dated'],
+        ':from' => $c['received_from'],
+        ':amount' => $c['amount'],
+        ':words' => $c['amount_words'],
+        ':ptype' => $c['payment_type'],
+        ':pvia' => $c['payment_via'],
+        ':prev' => $c['previous_balance'],
+        ':curr' => $c['current_balance'],
+        ':fdet' => $c['file_details'],
+        ':created_by' => $createdBy,
+    ]);
+    $id = (int)db()->lastInsertId();
+    sync_all_account_statements();
+
+    $get = db()->prepare('SELECT * FROM receipts WHERE id = :id');
+    $get->execute([':id' => $id]);
+    respond(['data' => receipt_payload($get->fetch() ?: ['id' => $id]), 'message' => 'Receipt saved'], 201);
+}
+
+/** PUT /receipts/{id} — update an existing receipt voucher. */
+function update_receipt(int $id, array $body): void
+{
+    ensure_receipts_table();
+    $existing = db()->prepare('SELECT id FROM receipts WHERE id = :id');
+    $existing->execute([':id' => $id]);
+    if ($existing->fetchColumn() === false) fail('Receipt not found', 404);
+
+    $c = receipt_columns($body);
+    if ($c['receipt_no'] === '') fail('Receipt number is required');
+
+    $dup = db()->prepare('SELECT id FROM receipts WHERE receipt_no = :no AND id <> :id');
+    $dup->execute([':no' => $c['receipt_no'], ':id' => $id]);
+    if ($dup->fetchColumn() !== false) {
+        fail('A receipt with number "' . $c['receipt_no'] . '" already exists', 409);
+    }
+
+    db()->prepare(
+        'UPDATE receipts SET receipt_no = :no, reg_no = :reg, dated = :dated, received_from = :from,
+                amount = :amount, amount_words = :words, payment_type = :ptype, payment_via = :pvia,
+                previous_balance = :prev, current_balance = :curr, file_details = :fdet
+          WHERE id = :id'
+    )->execute([
+        ':no' => $c['receipt_no'],
+        ':reg' => $c['reg_no'],
+        ':dated' => $c['dated'],
+        ':from' => $c['received_from'],
+        ':amount' => $c['amount'],
+        ':words' => $c['amount_words'],
+        ':ptype' => $c['payment_type'],
+        ':pvia' => $c['payment_via'],
+        ':prev' => $c['previous_balance'],
+        ':curr' => $c['current_balance'],
+        ':fdet' => $c['file_details'],
+        ':id' => $id,
+    ]);
+    sync_all_account_statements();
+
+    $get = db()->prepare('SELECT * FROM receipts WHERE id = :id');
+    $get->execute([':id' => $id]);
+    respond(['data' => receipt_payload($get->fetch() ?: []), 'message' => 'Receipt updated']);
+}
+
+/** DELETE /receipts/{id} */
+function delete_receipt(int $id): void
+{
+    ensure_receipts_table();
+    $stmt = db()->prepare('DELETE FROM receipts WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    if ($stmt->rowCount() === 0) fail('Receipt not found', 404);
+    sync_all_account_statements();
+    respond(['message' => 'Receipt deleted']);
+}
+
+/* ----------------------- ACCOUNT STATEMENTS ----------------------- */
+
+function ensure_account_statements_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    db()->exec(
+        'CREATE TABLE IF NOT EXISTS account_statements (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            registration_no VARCHAR(64) DEFAULT "",
+            booking_date VARCHAR(20) DEFAULT "",
+            member_name VARCHAR(255) DEFAULT "",
+            file_no VARCHAR(64) DEFAULT "",
+            so VARCHAR(255) DEFAULT "",
+            plot_size VARCHAR(64) DEFAULT "",
+            cnic VARCHAR(64) DEFAULT "",
+            file_type VARCHAR(64) DEFAULT "",
+            address VARCHAR(255) DEFAULT "",
+            block VARCHAR(64) DEFAULT "",
+            phone_no VARCHAR(64) DEFAULT "",
+            street VARCHAR(64) DEFAULT "",
+            file_status VARCHAR(64) DEFAULT "Active",
+            cost_of_land DECIMAL(14,2) NOT NULL DEFAULT 0,
+            remarks VARCHAR(255) DEFAULT "",
+            created_by INT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_as_reg (registration_no),
+            INDEX idx_as_member (member_name)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+    db()->exec(
+        'CREATE TABLE IF NOT EXISTS account_statement_rows (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            statement_id INT NOT NULL,
+            seq INT NOT NULL DEFAULT 0,
+            description VARCHAR(255) DEFAULT "",
+            inst_no VARCHAR(64) DEFAULT "",
+            due_date VARCHAR(20) DEFAULT "",
+            due_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+            paid_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+            paid_date VARCHAR(20) DEFAULT "",
+            outstanding DECIMAL(14,2) NOT NULL DEFAULT 0,
+            receipt_id INT NULL,
+            INDEX idx_asr_statement (statement_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+}
+
+/** Cast + derive a ledger row for the API response. */
+function statement_row_payload(array $row, bool $recompute = true): array
+{
+    foreach (['seq', 'statement_id'] as $k) {
+        $row[$k] = isset($row[$k]) ? (int)$row[$k] : 0;
+    }
+    foreach (['due_amount', 'paid_amount', 'outstanding'] as $k) {
+        $row[$k] = isset($row[$k]) ? (float)$row[$k] : 0.0;
+    }
+    if ($recompute) {
+        $row['outstanding'] = max(0.0, (float)$row['due_amount'] - (float)$row['paid_amount']);
+    }
+    $row['receipt_id'] = isset($row['receipt_id']) && $row['receipt_id'] !== null ? (int)$row['receipt_id'] : null;
+    return $row;
+}
+
+/** Build the full statement payload: ledger rows + derived summary numbers. */
+function account_statement_payload(array $stmt): array
+{
+    if (!$stmt) return $stmt;
+    $stmt['id'] = (int)$stmt['id'];
+    $stmt['cost_of_land'] = isset($stmt['cost_of_land']) ? (float)$stmt['cost_of_land'] : 0.0;
+    $stmt['created_by'] = isset($stmt['created_by']) && $stmt['created_by'] !== null ? (int)$stmt['created_by'] : null;
+
+    $q = db()->prepare('SELECT * FROM account_statement_rows WHERE statement_id = :sid ORDER BY seq, id');
+    $q->execute([':sid' => $stmt['id']]);
+    $rows = array_map('statement_row_payload', $q->fetchAll());
+
+    $received = 0.0;
+    foreach ($rows as $r) {
+        $received += (float)$r['paid_amount'];
+    }
+    $stmt['rows'] = $rows;
+    $stmt['received_amount'] = round($received, 2);
+    $stmt['balance'] = round(max(0.0, $stmt['cost_of_land'] - $received), 2);
+    $stmt['payment_progress'] = $stmt['cost_of_land'] > 0
+        ? round(($received / $stmt['cost_of_land']) * 100, 2)
+        : 0.0;
+    $stmt['generated_on'] = gmdate('d M Y g:i A');
+    return $stmt;
+}
+
+/** GET /account-statements[?search=&created_by=] */
+function list_account_statements(array $filters): void
+{
+    ensure_account_statements_table();
+    $where = [];
+    $params = [];
+    if (!empty($filters['search'])) {
+        $term = '%' . $filters['search'] . '%';
+        $cols = ['registration_no', 'member_name', 'file_no', 'so', 'cnic', 'phone_no'];
+        $pats = [];
+        foreach ($cols as $i => $col) {
+            $pname = ':search' . $i;
+            $params[$pname] = $term;
+            $pats[] = "$col LIKE $pname";
+        }
+        $where[] = '(' . implode(' OR ', $pats) . ')';
+    }
+    if (!empty($filters['created_by'])) {
+        $params[':created_by'] = to_int((string)$filters['created_by']);
+        $where[] = 'created_by = :created_by';
+    }
+    $sql = 'SELECT * FROM account_statements';
+    if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
+    $sql .= ' ORDER BY id DESC';
+
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    $rows = array_map('account_statement_payload', $stmt->fetchAll());
+    respond(['data' => $rows, 'count' => count($rows)]);
+}
+
+/** GET /account-statements/{id} — single statement + ledger rows. */
+function get_account_statement(int $id): void
+{
+    ensure_account_statements_table();
+    $stmt = db()->prepare('SELECT * FROM account_statements WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    if (!$row) fail('Account statement not found', 404);
+    respond(['data' => account_statement_payload($row)]);
+}
+
+/** Shared insert/update column list for an account statement body. */
+function account_statement_columns(array $body): array
+{
+    $num = static function ($v): float {
+        $cleaned = preg_replace('/[^0-9.\-]/', '', (string)($v ?? 0));
+        return (float)($cleaned === '' ? 0 : $cleaned);
+    };
+    return [
+        'registration_no' => normalize_optional($body['registration_no'] ?? null) ?? '',
+        'booking_date' => normalize_optional($body['booking_date'] ?? null) ?? '',
+        'member_name' => normalize_optional($body['member_name'] ?? null) ?? '',
+        'file_no' => normalize_optional($body['file_no'] ?? null) ?? '',
+        'so' => normalize_optional($body['so'] ?? null) ?? '',
+        'plot_size' => normalize_optional($body['plot_size'] ?? null) ?? '',
+        'cnic' => normalize_optional($body['cnic'] ?? null) ?? '',
+        'file_type' => normalize_optional($body['file_type'] ?? null) ?? '',
+        'address' => normalize_optional($body['address'] ?? null) ?? '',
+        'block' => normalize_optional($body['block'] ?? null) ?? '',
+        'phone_no' => normalize_optional($body['phone_no'] ?? null) ?? '',
+        'street' => normalize_optional($body['street'] ?? null) ?? '',
+        'file_status' => normalize_optional($body['file_status'] ?? null) ?? '',
+        'cost_of_land' => $num($body['cost_of_land'] ?? 0),
+        'remarks' => normalize_optional($body['remarks'] ?? null) ?? '',
+    ];
+}
+
+/** POST /account-statements — create a statement (empty ledger). */
+function create_account_statement(array $body): void
+{
+    ensure_account_statements_table();
+    $c = account_statement_columns($body);
+    $createdBy = isset($body['created_by']) && (int)$body['created_by'] > 0 ? (int)$body['created_by'] : null;
+
+    db()->prepare(
+        'INSERT INTO account_statements
+            (registration_no, booking_date, member_name, file_no, so, plot_size, cnic, file_type,
+             address, block, phone_no, street, file_status, cost_of_land, remarks, created_by)
+         VALUES (:reg, :bdate, :member, :file_no, :so, :psize, :cnic, :ftype,
+                 :addr, :block, :phone, :street, :fstatus, :cost, :remarks, :created_by)'
+    )->execute([
+        ':reg' => $c['registration_no'],
+        ':bdate' => $c['booking_date'],
+        ':member' => $c['member_name'],
+        ':file_no' => $c['file_no'],
+        ':so' => $c['so'],
+        ':psize' => $c['plot_size'],
+        ':cnic' => $c['cnic'],
+        ':ftype' => $c['file_type'],
+        ':addr' => $c['address'],
+        ':block' => $c['block'],
+        ':phone' => $c['phone_no'],
+        ':street' => $c['street'],
+        ':fstatus' => $c['file_status'] !== '' ? $c['file_status'] : 'Active',
+        ':cost' => $c['cost_of_land'],
+        ':remarks' => $c['remarks'],
+        ':created_by' => $createdBy,
+    ]);
+    $id = (int)db()->lastInsertId();
+    get_account_statement($id);
+}
+
+/** PUT /account-statements/{id} */
+function update_account_statement(int $id, array $body): void
+{
+    ensure_account_statements_table();
+    $existing = db()->prepare('SELECT id FROM account_statements WHERE id = :id');
+    $existing->execute([':id' => $id]);
+    if ($existing->fetchColumn() === false) fail('Account statement not found', 404);
+
+    $c = account_statement_columns($body);
+    db()->prepare(
+        'UPDATE account_statements SET registration_no = :reg, booking_date = :bdate, member_name = :member,
+                file_no = :file_no, so = :so, plot_size = :psize, cnic = :cnic, file_type = :ftype,
+                address = :addr, block = :block, phone_no = :phone, street = :street,
+                file_status = :fstatus, cost_of_land = :cost, remarks = :remarks
+          WHERE id = :id'
+    )->execute([
+        ':reg' => $c['registration_no'],
+        ':bdate' => $c['booking_date'],
+        ':member' => $c['member_name'],
+        ':file_no' => $c['file_no'],
+        ':so' => $c['so'],
+        ':psize' => $c['plot_size'],
+        ':cnic' => $c['cnic'],
+        ':ftype' => $c['file_type'],
+        ':addr' => $c['address'],
+        ':block' => $c['block'],
+        ':phone' => $c['phone_no'],
+        ':street' => $c['street'],
+        ':fstatus' => $c['file_status'] !== '' ? $c['file_status'] : 'Active',
+        ':cost' => $c['cost_of_land'],
+        ':remarks' => $c['remarks'],
+        ':id' => $id,
+    ]);
+    sync_statement_from_receipts($id);
+    get_account_statement($id);
+}
+
+/** DELETE /account-statements/{id} */
+function delete_account_statement(int $id): void
+{
+    ensure_account_statements_table();
+    $delRows = db()->prepare('DELETE FROM account_statement_rows WHERE statement_id = :id');
+    $delRows->execute([':id' => $id]);
+    $stmt = db()->prepare('DELETE FROM account_statements WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    if ($stmt->rowCount() === 0) fail('Account statement not found', 404);
+    respond(['message' => 'Account statement deleted']);
+}
+
+/** POST /account-statements/{id}/rows — add a ledger row. */
+function add_statement_row(int $sid, array $body): void
+{
+    ensure_account_statements_table();
+    $check = db()->prepare('SELECT id FROM account_statements WHERE id = :id');
+    $check->execute([':id' => $sid]);
+    if ($check->fetchColumn() === false) fail('Account statement not found', 404);
+
+    $desc = normalize_optional($body['description'] ?? null) ?? '';
+    if ($desc === '') fail('Row description is required');
+    $seq = (int)($body['seq'] ?? 0);
+    $due = (float)preg_replace('/[^0-9.\-]/', '', (string)($body['due_amount'] ?? 0));
+    $paid = (float)preg_replace('/[^0-9.\-]/', '', (string)($body['paid_amount'] ?? 0));
+    $outstanding = max(0.0, $due - $paid);
+
+    db()->prepare(
+        'INSERT INTO account_statement_rows
+            (statement_id, seq, description, inst_no, due_date, due_amount, paid_amount, paid_date, outstanding)
+         VALUES (:sid, :seq, :desc, :inst, :ddate, :due, :paid, :pdate, :out)'
+    )->execute([
+        ':sid' => $sid,
+        ':seq' => $seq,
+        ':desc' => $desc,
+        ':inst' => normalize_optional($body['inst_no'] ?? null) ?? '',
+        ':ddate' => normalize_optional($body['due_date'] ?? null) ?? '',
+        ':due' => $due,
+        ':paid' => $paid,
+        ':pdate' => normalize_optional($body['paid_date'] ?? null) ?? '',
+        ':out' => $outstanding,
+    ]);
+    sync_statement_from_receipts($sid);
+    get_account_statement($sid);
+}
+
+/** PUT /account-statements/{sid}/rows/{rid} */
+function update_statement_row(int $sid, int $rid, array $body): void
+{
+    ensure_account_statements_table();
+    $check = db()->prepare('SELECT id FROM account_statement_rows WHERE id = :rid AND statement_id = :sid');
+    $check->execute([':rid' => $rid, ':sid' => $sid]);
+    if ($check->fetchColumn() === false) fail('Ledger row not found', 404);
+
+    $desc = normalize_optional($body['description'] ?? null) ?? '';
+    $due = (float)preg_replace('/[^0-9.\-]/', '', (string)($body['due_amount'] ?? 0));
+    $paid = (float)preg_replace('/[^0-9.\-]/', '', (string)($body['paid_amount'] ?? 0));
+    $outstanding = max(0.0, $due - $paid);
+
+    db()->prepare(
+        'UPDATE account_statement_rows SET
+                seq = :seq, description = :desc, inst_no = :inst, due_date = :ddate,
+                due_amount = :due, paid_amount = :paid, paid_date = :pdate, outstanding = :out,
+                receipt_id = :receipt_id
+          WHERE id = :rid AND statement_id = :sid'
+    )->execute([
+        ':seq' => (int)($body['seq'] ?? 0),
+        ':desc' => $desc,
+        ':inst' => normalize_optional($body['inst_no'] ?? null) ?? '',
+        ':ddate' => normalize_optional($body['due_date'] ?? null) ?? '',
+        ':due' => $due,
+        ':paid' => $paid,
+        ':pdate' => normalize_optional($body['paid_date'] ?? null) ?? '',
+        ':out' => $outstanding,
+        ':receipt_id' => isset($body['receipt_id']) && (int)$body['receipt_id'] > 0 ? (int)$body['receipt_id'] : null,
+        ':rid' => $rid,
+        ':sid' => $sid,
+    ]);
+    sync_statement_from_receipts($sid);
+    get_account_statement($sid);
+}
+
+/** DELETE /account-statements/{sid}/rows/{rid} */
+function delete_statement_row(int $sid, int $rid): void
+{
+    ensure_account_statements_table();
+    $stmt = db()->prepare('DELETE FROM account_statement_rows WHERE id = :rid AND statement_id = :sid');
+    $stmt->execute([':rid' => $rid, ':sid' => $sid]);
+    if ($stmt->rowCount() === 0) fail('Ledger row not found', 404);
+    sync_statement_from_receipts($sid);
+    respond(['message' => 'Ledger row deleted']);
+}
+
+/**
+ * POST /account-statements/{id}/schedule
+ * Seeds the standard 31-row installment schedule like the Excel template:
+ * one Booking/Advance row sized to the cost of land, then 30 installments
+ * where every 6th is a "Half-Yearly Installment" and the rest regular.
+ */
+function generate_statement_schedule(int $sid): void
+{
+    ensure_account_statements_table();
+    $stmt = db()->prepare('SELECT * FROM account_statements WHERE id = :id');
+    $stmt->execute([':id' => $sid]);
+    $st = $stmt->fetch();
+    if (!$st) fail('Account statement not found', 404);
+
+    // Clear any pre-existing schedule rows first (idempotent re-generation).
+    $del = db()->prepare('DELETE FROM account_statement_rows WHERE statement_id = :id');
+    $del->execute([':id' => $sid]);
+
+    $cost = (float)$st['cost_of_land'];
+    $ins = db()->prepare(
+        'INSERT INTO account_statement_rows
+            (statement_id, seq, description, inst_no, due_date, due_amount, paid_amount, paid_date, outstanding)
+         VALUES (:sid, :seq, :desc, :inst, :ddate, :due, :paid, :pdate, :out)'
+    );
+
+    $seq = 1;
+    $ins->execute([
+        ':sid' => $sid, ':seq' => $seq++, ':desc' => 'Booking/Advance', ':inst' => '-',
+        ':ddate' => 'N/A', ':due' => $cost, ':paid' => 0, ':pdate' => '', ':out' => $cost,
+    ]);
+
+    for ($i = 1; $i <= 30; $i++) {
+        $isHalf = ($i % 6) === 0;
+        $ins->execute([
+            ':sid' => $sid, ':seq' => $seq++, ':desc' => $isHalf ? 'Half-Yearly Installment' : 'Regular Installment',
+            ':inst' => (string)$i, ':ddate' => '', ':due' => 0, ':paid' => 0, ':pdate' => '', ':out' => 0,
+        ]);
+    }
+    sync_statement_from_receipts($sid);
+    get_account_statement($sid);
+}
+
+/** Receipts that belong to a statement (matched by reg # / file # / member name). */
+function matching_receipts_for_statement(array $stmt): array
+{
+    $refs = array_values(array_filter(
+        [$stmt['registration_no'] ?? '', $stmt['file_no'] ?? ''],
+        fn($v) => trim((string)$v) !== ''
+    ));
+    $byId = [];
+    if ($refs) {
+        foreach ($refs as $ref) {
+            $q = db()->prepare('SELECT * FROM receipts WHERE reg_no LIKE :ref ORDER BY dated IS NULL, dated, id');
+            $q->execute([':ref' => '%' . trim((string)$ref) . '%']);
+            foreach ($q->fetchAll() as $r) {
+                $byId[(int)$r['id']] = $r;
+            }
+        }
+    } else {
+        $member = trim((string)($stmt['member_name'] ?? ''));
+        if ($member === '') return [];
+        $q = db()->prepare('SELECT * FROM receipts WHERE LOWER(received_from) = LOWER(:m) ORDER BY dated IS NULL, dated, id');
+        $q->execute([':m' => $member]);
+        foreach ($q->fetchAll() as $r) {
+            $byId[(int)$r['id']] = $r;
+        }
+    }
+    $receipts = array_values($byId);
+    usort($receipts, static function ($a, $b): int {
+        $da = (string)($a['dated'] ?? '');
+        $db = (string)($b['dated'] ?? '');
+        if ($da !== $db) return strcmp($da, $db);
+        return (int)$a['id'] <=> (int)$b['id'];
+    });
+    return $receipts;
+}
+
+/**
+ * Re-allocate every receipt for a statement across its ledger rows, in
+ * receipt date order. Paid amounts are reset first so editing or deleting a
+ * receipt keeps the statement consistent (the UI surfaces which rows are
+ * receipt-driven via the receipt_id link).
+ */
+function sync_statement_from_receipts(int $statementId): void
+{
+    if (!table_exists('account_statements')) return;
+    $stmt = db()->prepare('SELECT * FROM account_statements WHERE id = :id');
+    $stmt->execute([':id' => $statementId]);
+    $st = $stmt->fetch();
+    if (!$st) return;
+
+    $q = db()->prepare('SELECT * FROM account_statement_rows WHERE statement_id = :sid ORDER BY seq, id');
+    $q->execute([':sid' => $statementId]);
+    $rows = $q->fetchAll();
+    if (!$rows) return;
+
+    $receipts = matching_receipts_for_statement($st);
+
+    // Reset paid columns before re-applying receipts (idempotent re-sync).
+    $reset = db()->prepare(
+        'UPDATE account_statement_rows SET paid_amount = 0, paid_date = "", outstanding = due_amount, receipt_id = NULL
+          WHERE statement_id = :sid'
+    );
+    $reset->execute([':sid' => $statementId]);
+
+    $upd = db()->prepare(
+        'UPDATE account_statement_rows
+            SET paid_amount = :paid, paid_date = :pdate, outstanding = :out, receipt_id = :receipt_id
+          WHERE id = :id'
+    );
+
+    $rowIds = array_column($rows, 'id');
+    foreach ($receipts as $receipt) {
+        $remaining = (float)$receipt['amount'];
+        $assigned = false;
+        foreach ($rowIds as $i => $rid) {
+            if ($remaining <= 0) break;
+            $due = (float)$rows[$i]['due_amount'];
+            $paid = (float)$rows[$i]['paid_amount'];
+            $outstanding = max(0.0, $due - $paid);
+            if ($outstanding <= 0) continue;
+
+            $take = min($remaining, $outstanding);
+            $newPaid = $paid + $take;
+            $paidDate = $rows[$i]['paid_date'] !== '' ? $rows[$i]['paid_date'] : (string)($receipt['dated'] ?? '');
+            $upd->execute([
+                ':paid' => $newPaid,
+                ':pdate' => $paidDate,
+                ':out' => max(0.0, $due - $newPaid),
+                ':receipt_id' => $assigned ? null : (int)$receipt['id'],
+                ':id' => $rid,
+            ]);
+            $rows[$i]['paid_amount'] = $newPaid;
+            $rows[$i]['paid_date'] = $paidDate;
+            $rows[$i]['outstanding'] = max(0.0, $due - $newPaid);
+            $remaining -= $take;
+            $assigned = true;
+        }
+    }
+}
+
+/** Small table-existence helper used by the lazy-migration codepaths. */
+function table_exists(string $table): bool
+{
+    $st = db()->prepare(
+        "SELECT COUNT(*) FROM information_schema.TABLES
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t"
+    );
+    $st->execute([':t' => $table]);
+    return (int)$st->fetchColumn() > 0;
+}
+
 /* ----------------------- EMAILS (SMTP campaign sender) ----------------------- */
 
 /**
@@ -3787,6 +4503,56 @@ switch ($resource) {
         } elseif ($method === 'DELETE') {
             if (!$id) fail('Invoice id required');
             delete_invoice(to_int($id));
+        }
+        break;
+
+    case 'receipts':
+        $id = $parts[1] ?? null;
+        if ($method === 'GET') {
+            if ($id === null) list_receipts($filters);
+            elseif ($id === 'next-number') next_receipt_number();
+            else fail('Unknown receipt endpoint', 404);
+        } elseif ($method === 'POST') {
+            create_receipt(json_body());
+        } elseif ($method === 'PUT') {
+            if (!$id) fail('Receipt id required');
+            update_receipt(to_int($id), json_body());
+        } elseif ($method === 'DELETE') {
+            if (!$id) fail('Receipt id required');
+            delete_receipt(to_int($id));
+        }
+        break;
+
+    case 'account-statements':
+        $id = $parts[1] ?? null;
+        $sub = $parts[2] ?? null;
+        if ($method === 'GET') {
+            if ($id === null) list_account_statements($filters);
+            else get_account_statement(to_int($id));
+        } elseif ($method === 'POST') {
+            if ($id !== null && $sub === 'rows') {
+                add_statement_row(to_int($id), json_body());
+            } elseif ($id !== null && $sub === 'schedule') {
+                generate_statement_schedule(to_int($id));
+            } else {
+                create_account_statement(json_body());
+            }
+        } elseif ($method === 'PUT') {
+            if (!$id) fail('Statement id required');
+            if ($sub === 'rows') {
+                if (!($parts[3] ?? null)) fail('Row id required');
+                update_statement_row(to_int($id), to_int($parts[3]), json_body());
+            } else {
+                update_account_statement(to_int($id), json_body());
+            }
+        } elseif ($method === 'DELETE') {
+            if (!$id) fail('Statement id required');
+            if ($sub === 'rows') {
+                if (!($parts[3] ?? null)) fail('Row id required');
+                delete_statement_row(to_int($id), to_int($parts[3]));
+            } else {
+                delete_account_statement(to_int($id));
+            }
         }
         break;
 

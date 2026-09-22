@@ -256,6 +256,119 @@ export interface InvoiceInput {
   created_by?: number | null;
 }
 
+/* ------------------- RECEIPT VOUCHERS ------------------- */
+
+/** Saved receipt voucher row (GET /receipts). */
+export interface ApiReceipt {
+  id: number;
+  receipt_no: string;
+  reg_no: string;
+  dated: string;
+  received_from: string;
+  amount: number;
+  amount_words: string;
+  payment_type: string;
+  payment_via: string;
+  previous_balance: number;
+  current_balance: number;
+  file_details: string;
+  created_by: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** Payload for creating/updating a receipt voucher. */
+export interface ReceiptInput {
+  receipt_no: string;
+  reg_no?: string;
+  dated?: string;
+  received_from?: string;
+  amount?: number;
+  amount_words?: string;
+  payment_type?: string;
+  payment_via?: string;
+  previous_balance?: number;
+  current_balance?: number;
+  file_details?: string;
+  created_by?: number | null;
+}
+
+/* ------------------- ACCOUNT STATEMENTS ------------------- */
+
+/** One ledger row inside an account statement. */
+export interface ApiStatementRow {
+  id: number;
+  seq: number;
+  description: string;
+  inst_no: string;
+  due_date: string;
+  due_amount: number;
+  paid_amount: number;
+  paid_date: string;
+  outstanding: number;
+  receipt_id: number | null;
+}
+
+/** Saved account statement (GET /account-statements). */
+export interface ApiAccountStatement {
+  id: number;
+  registration_no: string;
+  booking_date: string;
+  member_name: string;
+  file_no: string;
+  so: string;
+  plot_size: string;
+  cnic: string;
+  file_type: string;
+  address: string;
+  block: string;
+  phone_no: string;
+  street: string;
+  file_status: string;
+  cost_of_land: number;
+  remarks: string;
+  rows: ApiStatementRow[];
+  received_amount: number;
+  balance: number;
+  payment_progress: number;
+  generated_on: string;
+  created_by: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** Payload for creating/updating an account statement. */
+export interface AccountStatementInput {
+  registration_no?: string;
+  booking_date?: string;
+  member_name?: string;
+  file_no?: string;
+  so?: string;
+  plot_size?: string;
+  cnic?: string;
+  file_type?: string;
+  address?: string;
+  block?: string;
+  phone_no?: string;
+  street?: string;
+  file_status?: string;
+  cost_of_land?: number;
+  remarks?: string;
+  created_by?: number | null;
+}
+
+/** Payload for creating/updating a ledger row. */
+export interface StatementRowInput {
+  seq?: number;
+  description?: string;
+  inst_no?: string;
+  due_date?: string;
+  due_amount?: number;
+  paid_amount?: number;
+  paid_date?: string;
+  receipt_id?: number | null;
+}
+
 export interface DealerLeadFilter {
   type: 'all' | 'days' | 'weeks' | 'months' | 'years' | 'range';
   value?: number;
@@ -948,4 +1061,74 @@ export const api = {
 
   deleteInvoice: (id: number) =>
     request<{ message: string }>(`/invoices/${id}`, { method: 'DELETE' }),
+
+  /* ------------------- RECEIPT VOUCHERS ------------------- */
+
+  listReceipts: (params: { search?: string; created_by?: number } = {}) =>
+    request<{ data: ApiReceipt[]; count: number }>(`/receipts${toQuery(params)}`),
+
+  nextReceiptNumber: () => request<{ data: { receipt_no: string } }>('/receipts/next-number'),
+
+  createReceipt: (input: ReceiptInput) =>
+    request<{ data: ApiReceipt; message: string }>('/receipts', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  updateReceipt: (id: number, input: ReceiptInput) =>
+    request<{ data: ApiReceipt; message: string }>(`/receipts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+
+  deleteReceipt: (id: number) =>
+    request<{ message: string }>(`/receipts/${id}`, { method: 'DELETE' }),
+
+  /* ------------------- ACCOUNT STATEMENTS ------------------- */
+
+  listAccountStatements: (params: { search?: string; created_by?: number } = {}) =>
+    request<{ data: ApiAccountStatement[]; count: number }>(
+      `/account-statements${toQuery(params)}`
+    ),
+
+  getAccountStatement: (id: number) =>
+    request<{ data: ApiAccountStatement }>(`/account-statements/${id}`),
+
+  createAccountStatement: (input: AccountStatementInput) =>
+    request<{ data: ApiAccountStatement; message: string }>('/account-statements', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  updateAccountStatement: (id: number, input: AccountStatementInput) =>
+    request<{ data: ApiAccountStatement; message: string }>(`/account-statements/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+
+  deleteAccountStatement: (id: number) =>
+    request<{ message: string }>(`/account-statements/${id}`, { method: 'DELETE' }),
+
+  addStatementRow: (statementId: number, input: StatementRowInput) =>
+    request<{ data: ApiAccountStatement; message: string }>(
+      `/account-statements/${statementId}/rows`,
+      { method: 'POST', body: JSON.stringify(input) }
+    ),
+
+  updateStatementRow: (statementId: number, rowId: number, input: StatementRowInput) =>
+    request<{ data: ApiAccountStatement; message: string }>(
+      `/account-statements/${statementId}/rows/${rowId}`,
+      { method: 'PUT', body: JSON.stringify(input) }
+    ),
+
+  deleteStatementRow: (statementId: number, rowId: number) =>
+    request<{ message: string }>(`/account-statements/${statementId}/rows/${rowId}`, {
+      method: 'DELETE',
+    }),
+
+  generateStatementSchedule: (statementId: number) =>
+    request<{ data: ApiAccountStatement; message: string }>(
+      `/account-statements/${statementId}/schedule`,
+      { method: 'POST', body: JSON.stringify({}) }
+    ),
 };

@@ -25,6 +25,7 @@ import {
   FaComments,
   FaChartLine,
   FaFileInvoice,
+  FaBookOpen,
   FaStore,
   FaHeadset,
 } from 'react-icons/fa6';
@@ -49,7 +50,8 @@ const primaryNav: NavItem[] = [
   { label: 'Contacts', icon: FaAddressBook, perm: 'contacts' },
   { label: 'Opportunities', icon: FaDiagramProject, perm: 'opportunities' },
   { label: 'Payments', icon: FaRegCreditCard, perm: 'payments' },
-  { label: 'Invoices', icon: FaFileInvoice, perm: 'invoices' },
+  { label: 'Receipt Voucher', icon: FaFileInvoice, perm: 'invoices' },
+  { label: 'Account Statement', icon: FaBookOpen, perm: 'invoices' },
 ];
 
 const secondaryNav: NavItem[] = [

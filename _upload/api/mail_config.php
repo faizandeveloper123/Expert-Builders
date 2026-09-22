@@ -1,6 +1,6 @@
 <?php
 /**
- * EVEE CRM - SMTP / mail configuration
+ * EXPERT BUILDERS CRM - SMTP / mail configuration
  *
  * Fill in the values below (or set the matching environment variables).
  * When SMTP_HOST is empty the API falls back to PHP's mail() so nothing
@@ -13,7 +13,7 @@
  *   4. USERNAME       the full email address used to send (e.g. no-reply@yourdomain.com)
  *   5. PASSWORD       the mailbox password (for Gmail: an App Password,
  *                     generated at https://myaccount.google.com/apppasswords)
- *   6. FROM NAME      display name shown in the inbox (e.g. "Yadea Pakistan")
+ *   6. FROM NAME      display name shown in the inbox (e.g. "Expert Builders & Developers")
  *
  * Anti-spam notes:
  *   - Always use a real mailbox on YOUR domain as the sender.
@@ -37,7 +37,7 @@ if (!defined('SMTP_PASS')) {
     define('SMTP_PASS', (string)getenv('SMTP_PASS')); // empty until secrets are provided
 }
 
-define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Yadea Pakistan');
+define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Expert Builders & Developers');
 
 /** Public site URL used in email links (no trailing slash). */
 define('APP_URL', getenv('APP_URL') ?: 'https://agency.hifimarketing.co');

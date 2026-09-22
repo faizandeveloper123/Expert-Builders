@@ -10,7 +10,8 @@
  *   #/sites           -> Sites / Forms dashboard (standalone page)
  *   #/settings        -> Settings page (standalone page, own sidebar)
  *   #/dashboard       -> Dealer / Franchise dashboard (owner vs user views)
- *   #/invoices        -> Expert Builders Sales Tax Invoice generator
+ *   #/invoices        -> Expert Builders Receipt Voucher generator
+ *   #/account-statements -> Expert Builders Account Statement ledger
  */
 
 export type Route =
@@ -22,6 +23,7 @@ export type Route =
   | { name: 'dashboard' }
   | { name: 'automation' }
   | { name: 'invoices' }
+  | { name: 'account-statements' }
   | { name: 'dealership-portal' }
   | { name: 'inquiries-portal' }
   | { name: 'dealership-form' }
@@ -61,6 +63,9 @@ export function parseHash(): Route {
       return { name: 'automation' };
     case 'invoices':
       return { name: 'invoices' };
+    case 'account-statements':
+    case 'account-statement':
+      return { name: 'account-statements' };
     case 'dealership-portal':
       return { name: 'dealership-portal' };
     case 'inquiries-portal':
@@ -102,6 +107,8 @@ export function routeToHash(route: Route): string {
       return '#/automation';
     case 'invoices':
       return '#/invoices';
+    case 'account-statements':
+      return '#/account-statements';
     case 'dealership-portal':
       return '#/dealership-portal';
     case 'inquiries-portal':
