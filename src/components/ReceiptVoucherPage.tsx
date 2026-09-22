@@ -796,7 +796,7 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
 
                     <div className="grid grid-cols-2 gap-2">
                       <label className="block">
-                        <span className="block font-semibold text-slate-700 mb-1">Amount (PKR)</span>
+                        <span className="block font-semibold text-slate-700 mb-1">Amount Received (PKR)</span>
                         <input
                           type="number"
                           step="1"
@@ -930,45 +930,55 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
                         </h2>
                       </div>
 
-                      {/* Field grid (label | value pairing like the PDF) */}
+                      {/* Field grid — exact layout of Expert_Receipt_Voucher.pdf */}
                       <div className="px-6 pt-6">
                         <div className="rounded-md overflow-hidden" style={{ border: `1px solid ${RV.border}` }}>
-                          {/* Row 1 */}
+                          {/* Row 1: Receipt No | Reg # | Date | Amount */}
                           <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
                             <FieldCell label="Receipt No" value={form.receiptNo} onChange={setField('receiptNo')} kind="text" />
                             <FieldCell label="Reg #" value={form.regNo} onChange={setField('regNo')} kind="text" />
                             <FieldCell label="Date" value={form.dated} onChange={setField('dated')} kind="text" />
-                            <FieldCell label="Amount" value={form.amount} onChange={setField('amount')} kind="number" className="border-r-0" />
+                            <FieldCell label="Amount" value={form.amount} onChange={setField('amount')} kind="number" merged />
                           </div>
 
-                          {/* Row 2 */}
+                          {/* Row 2: Received From (full width) */}
                           <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
                             <FieldCell label="Received From" value={form.receivedFrom} onChange={setField('receivedFrom')} kind="text" merged />
-                            <div className="flex-1" />
                           </div>
 
-                          {/* Row 3 */}
+                          {/* Row 3: Amount in Words (full width) */}
                           <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
-                            <FieldCell label="Amount in Words" value={amountWords || autoWords} onChange={setField('amountWords')} kind="text" className="border-r-0" />
-                            <FieldCell label="Current Balance" value={String(currentBalance)} onChange={() => undefined} kind="text" className="!border-r" />
-                            <FieldCell label="Payment" value={form.paymentType} onChange={setField('paymentType')} kind="text" />
-                            <FieldCell label="Previous Balance" value={form.previousBalance} onChange={setField('previousBalance')} kind="number" className="border-r-0" />
+                            <FieldCell
+                              label="Amount in Words"
+                              value={amountWords || autoWords}
+                              onChange={setField('amountWords')}
+                              kind="text"
+                              merged
+                            />
+                          </div>
+
+                          {/* Row 4: Current Balance | Amount Received */}
+                          <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
+                            <FieldCell label="Current Balance" value={String(currentBalance)} onChange={() => undefined} kind="text" />
+                            <FieldCell label="Amount Received" value={form.amount} onChange={setField('amount')} kind="number" merged />
+                          </div>
+
+                          {/* Row 5: Payment Type | Payment Via */}
+                          <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
+                            <FieldCell label="Payment Type" value={form.paymentType} onChange={setField('paymentType')} kind="text" />
+                            <FieldCell label="Payment Via" value={form.paymentVia} onChange={setField('paymentVia')} kind="text" merged />
+                          </div>
+
+                          {/* Row 6: Previous Balance | File Details */}
+                          <div className="flex">
+                            <FieldCell label="Previous Balance" value={form.previousBalance} onChange={setField('previousBalance')} kind="number" />
+                            <FieldCell label="File Details" value={form.fileDetails} onChange={setField('fileDetails')} kind="text" merged />
                           </div>
                         </div>
 
-                        {/* Row 4 - Payment Via / File Details */}
-                        <div className="mt-4 grid grid-cols-2 gap-4">
-                          <div className="flex">
-                            <FieldCell label="Payment Via" value={form.paymentVia} onChange={setField('paymentVia')} kind="text" />
-                          </div>
-                          <div className="flex">
-                            <FieldCell label="File Details" value={form.fileDetails} onChange={setField('fileDetails')} kind="text" className="border-r-0" />
-                          </div>
-                        </div>
-
-                        {/* Row 5 - Summary bar */}
+                        {/* Summary bar — mirrors the PDF's highlight panel */}
                         <div className="mt-4" style={{ borderTop: `2px solid ${RV.dark}`, borderBottom: `2px solid ${RV.dark}` }}>
-                          <div className="flex items-center justify-between px-2 py-2" style={{ backgroundColor: RV.labelCell }}>
+                          <div className="flex items-center justify-between px-3 py-2" style={{ backgroundColor: RV.labelCell }}>
                             <div>
                               <span className="font-extrabold text-[13px]" style={{ color: RV.dark }}>
                                 Amount Received:{' '}
@@ -1011,10 +1021,10 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
                       {/* Signatures */}
                       <div className="px-6 mt-6 grid grid-cols-2 gap-6 text-[12px] font-semibold">
                         <div>
-                          Received By: <span className="border-b border-[#222222] inline-block w-40" />
+                          Sign &amp; Seal: <span className="border-b border-[#222222] inline-block w-40" />
                         </div>
                         <div className="text-right">
-                          Sign &amp; Seal:{' '}
+                          Received By:{' '}
                           <span className="border-b border-[#222222] inline-block w-40" />
                         </div>
                       </div>
