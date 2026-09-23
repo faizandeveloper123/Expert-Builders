@@ -436,7 +436,7 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
   /* ------------------------------- UI --------------------------------- */
 
   const cellInput = (cls = '') =>
-    `w-full bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#0B5EA8]/40 rounded font-semibold text-[#1F2937] placeholder:text-slate-400 ${cls}`;
+    `w-full min-w-0 bg-transparent px-1.5 py-1 text-[11px] focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#0B5EA8]/40 rounded font-semibold text-[#1F2937] placeholder:text-slate-400 ${cls}`;
 
   /* One labeled editable cell of the member info grid (Excel rows 7..13). */
   function FieldCell({
@@ -451,17 +451,24 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
     return (
       <>
         <div
-          className="px-2 py-1.5 w-32 shrink-0 text-[10px] font-extrabold uppercase tracking-wide flex items-center"
-          style={{ backgroundColor: XLS.rowFillA, color: '#1F2937', borderRight: `1px solid ${XLS.rule}` }}
+          className="px-2 py-1.5 shrink-0 text-[10px] font-extrabold uppercase tracking-wide flex items-center overflow-hidden"
+          style={{
+            backgroundColor: XLS.rowFillA,
+            color: '#1F2937',
+            borderRight: `1px solid ${XLS.rule}`,
+            width: 128,
+            maxWidth: '38%',
+            minWidth: 72,
+          }}
         >
-          {label}
+          <span className="truncate">{label}</span>
         </div>
         <input
           type="text"
           value={value}
           onChange={onChange}
           placeholder="—"
-          className={cellInput('flex-1')}
+          className={`${cellInput('flex-1 min-w-0')} overflow-hidden`}
         />
       </>
     );

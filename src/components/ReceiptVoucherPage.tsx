@@ -551,10 +551,14 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
     labelW?: number;
     twoLine?: boolean;
   }) => (
-    <div className={`flex items-stretch ${merged ? '' : 'border-r border-[#7F8C8D]'} ${className}`}>
+    <div
+      className={`flex items-stretch flex-1 min-w-0 overflow-hidden box-border ${
+        merged ? '' : 'border-r border-[#7F8C8D]'
+      } ${className}`}
+    >
       <div
-        className={`flex items-center px-2 py-1.5 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wide text-[#222222] ${twoLine ? '' : 'whitespace-nowrap'}`}
-        style={{ backgroundColor: RV.labelCell, width: `${labelW}%` }}
+        className={`flex items-center px-1.5 sm:px-2 py-1.5 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wide text-[#222222] leading-[1.15] ${twoLine ? '' : 'whitespace-nowrap'}`}
+        style={{ backgroundColor: RV.labelCell, width: `${labelW}%`, minWidth: 0 }}
       >
         {label}
       </div>
@@ -564,7 +568,7 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
         onChange={onChange}
         placeholder={placeholder}
         step={kind === 'number' ? step : undefined}
-        className={`rv-input flex-1 min-w-0 px-2 py-1.5 text-[10px] sm:text-[11px] bg-transparent font-semibold text-[#222222] placeholder-[#9aa4ad] ${
+        className={`rv-input flex-1 min-w-0 w-full px-1.5 sm:px-2 py-1.5 text-[10px] sm:text-[11px] bg-transparent font-semibold text-[#222222] placeholder-[#9aa4ad] ${
           bold ? 'font-bold' : ''
         }`}
       />
@@ -1154,7 +1158,6 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
                               onChange={setField('amountWords')}
                               kind="text"
                               labelW={34}
-                              twoLine={false}
                             />
                             <FieldCell
                               label="Current Balance"
