@@ -47,6 +47,20 @@ function parseDMY(value: string | null | undefined): Date | null {
 }
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_ABB = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Whole-number money "1400000" -> "1,400,000" (PDF shows no decimals). */
+function formatInt(amount: number): string {
+  if (!Number.isFinite(amount)) return '0';
+  return Math.round(amount).toLocaleString('en-US');
+}
+
+/** "DD/MM/YYYY" (or parseable) -> "05 Apr 2025" as shown in the PDF. */
+function formatDatePDF(value: string | null | undefined): string {
+  const d = parseDMY(value);
+  if (!d) return value || '';
+  return `${String(d.getDate()).padStart(2, '0')} ${MONTH_ABB[d.getMonth()]} ${d.getFullYear()}`;
+}
 
 /** Convert a number to English words ("15,000" -> "Fifteen Thousand"). */
 function numberToEnglishWords(input: number): string {
@@ -126,8 +140,8 @@ function emptyFormWithDefaults(): VoucherFormState {
 const COMPANY_LINE = "EXPERT MARKETING AND DEVELOPER'S";
 const COMPANY_ADDRESS =
   'Abdul Majeed Plaza, Main Chakri Road, Peer Mehar Ali Shah Town, Near Royal Grand Marquee, Rawalpindi.';
-const COMPANY_CONTACT =
-  'Mobile # 0300-5551350   |   Ph: 051-5575280   |   Email: expertbuilders39@gmail.com';
+const COMPANY_CONTACT_ALT =
+  'Mobile # 0300-5551350&nbsp; | &nbsp;Ph: 051-5575280&nbsp; | &nbsp;Email: expertbuilders39@gmail.com';
 
 /** PDF-derived palette (Expert_Receipt_Voucher.pdf). */
 const RV = {
@@ -143,6 +157,7 @@ const RV = {
 
 const HTML2PDF_CDN =
   'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+const QRCODE_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 
 type Html2PdfApi = {
   (): {
@@ -178,6 +193,43 @@ function loadHtml2Pdf(): Promise<Html2PdfApi> {
   });
 }
 
+type QRCodeApi = {
+  new (el: HTMLElement | string, opts: {
+    text: string;
+    width: number;
+    height: number;
+    colorDark?: string;
+    colorLight?: string;
+    correctLevel?: number;
+  }): unknown;
+  CorrectLevel: { M: number };
+};
+
+function getQRCode(): QRCodeApi | null {
+  const w = window as unknown as { QRCode?: QRCodeApi };
+  return w.QRCode ?? null;
+}
+
+function loadQRCode(): Promise<QRCodeApi> {
+  return new Promise((resolve, reject) => {
+    const existing = getQRCode();
+    if (existing) {
+      resolve(existing);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = QRCODE_CDN;
+    script.async = true;
+    script.onload = () => {
+      const lib = getQRCode();
+      if (lib) resolve(lib);
+      else reject(new Error('QR library failed to initialise'));
+    };
+    script.onerror = () => reject(new Error('Could not load the QR library'));
+    document.head.appendChild(script);
+  });
+}
+
 /* ================================ page ============================== */
 
 interface ReceiptVoucherPageProps {
@@ -194,6 +246,11 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  const [logoHeight, setLogoHeight] = useState(105);
+  const [qrSize, setQrSize] = useState(105);
+  const qrHostRef = useRef<HTMLDivElement | null>(null);
 
   const [receipts, setReceipts] = useState<ApiReceipt[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -228,6 +285,16 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
     };
   }, []);
 
+  /* Logo upload handler. */
+  const handleLogoChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setLogoDataUrl(String(reader.result));
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }, []);
+
   const loadReceipts = useCallback(async () => {
     setLoadingList(true);
     try {
@@ -251,6 +318,41 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
   const amount = parseNum(form.amount);
   const previousBalance = parseNum(form.previousBalance);
   const currentBalance = previousBalance > 0 ? Math.max(0, previousBalance - amount) : 0;
+
+  /* Generate QR in the top-right of the sheet from the current receipt data. */
+  useEffect(() => {
+    const host = qrHostRef.current;
+    if (!host) return;
+    const qrText = `EXPERT MARKETING & DEVELOPERS\nReceipt No: ${form.receiptNo || 'RDC-'}\nReg No: ${form.regNo || ''}\nAmount: PKR ${formatInt(amount)}`;
+    let cancelled = false;
+    const render = (QR: QRCodeApi) => {
+      if (cancelled || !qrHostRef.current) return;
+      qrHostRef.current.innerHTML = '';
+      try {
+        new QR(qrHostRef.current, {
+          text: qrText,
+          width: qrSize,
+          height: qrSize,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QR.CorrectLevel.M,
+        });
+      } catch {
+        /* silent */
+      }
+    };
+    const existing = getQRCode();
+    if (existing) {
+      render(existing);
+    } else {
+      loadQRCode()
+        .then(render)
+        .catch(() => undefined);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [form.receiptNo, form.regNo, amount, qrSize]);
 
   /* Keep "Amount in Words" in sync unless the user typed their own. */
   const autoWords = useMemo(() => {
@@ -434,6 +536,8 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
     kind = 'text',
     placeholder = '',
     step = 'any',
+    labelW = 32,
+    twoLine = true,
   }: {
     label: string;
     value: string;
@@ -444,11 +548,13 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
     kind?: 'text' | 'number';
     placeholder?: string;
     step?: string;
+    labelW?: number;
+    twoLine?: boolean;
   }) => (
     <div className={`flex items-stretch ${merged ? '' : 'border-r border-[#7F8C8D]'} ${className}`}>
       <div
-        className="flex items-center px-2 sm:px-3 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide text-[#222222]"
-        style={{ backgroundColor: RV.labelCell, width: merged ? 96 : 92 }}
+        className={`flex items-center px-2 py-1.5 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wide text-[#222222] ${twoLine ? '' : 'whitespace-nowrap'}`}
+        style={{ backgroundColor: RV.labelCell, width: `${labelW}%` }}
       >
         {label}
       </div>
@@ -458,7 +564,7 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
         onChange={onChange}
         placeholder={placeholder}
         step={kind === 'number' ? step : undefined}
-        className={`rv-input flex-1 min-w-0 px-2 py-1.5 sm:px-3 text-[11px] sm:text-[13px] bg-transparent font-semibold text-[#222222] placeholder-[#9aa4ad] ${
+        className={`rv-input flex-1 min-w-0 px-2 py-1.5 text-[10px] sm:text-[11px] bg-transparent font-semibold text-[#222222] placeholder-[#9aa4ad] ${
           bold ? 'font-bold' : ''
         }`}
       />
@@ -893,86 +999,192 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
                     applied to the client's Account Statement.
                   </p>
                 </div>
-              </div>
 
-              {/* -------------------- Document canvas -------------------- */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                <h2 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100">
+                  Logo &amp; QR Controls
+                </h2>
+                <div className="space-y-3 text-xs">
+                  <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-200">
+                    <div className="font-bold text-blue-900 uppercase tracking-wider text-[11px] mb-2">
+                      Left Logo
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"
+                    />
+                    <label className="block font-medium text-slate-700 mt-3 mb-1">
+                      Logo Size (Height px)
+                    </label>
+                    <input
+                      type="range"
+                      min={60}
+                      max={180}
+                      value={logoHeight}
+                      onChange={(e) => setLogoHeight(Number(e.target.value))}
+                      className="w-full accent-blue-600"
+                    />
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-slate-500">{logoHeight}px</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLogoDataUrl(null);
+                          setLogoHeight(105);
+                        }}
+                        className="text-[10px] text-rose-600 hover:underline"
+                      >
+                        Reset Default Logo
+                      </button>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <div className="font-bold text-slate-800 uppercase tracking-wider text-[11px] mb-2">
+                      Right QR Code
+                    </div>
+                    <label className="block font-medium text-slate-700 mb-1">QR Size (px)</label>
+                    <input
+                      type="range"
+                      min={60}
+                      max={160}
+                      value={qrSize}
+                      onChange={(e) => setQrSize(Number(e.target.value))}
+                      className="w-full accent-slate-800"
+                    />
+                    <div className="text-[10px] text-right text-slate-500 mt-1">{qrSize}px</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* -------------------- Document canvas -------------------- */}
               <div className="lg:col-span-8">
                 <div className="rv-scroll-host flex justify-start md:justify-center items-start overflow-x-auto pb-6">
                   <div className="w-full min-w-[680px] max-w-[800px] px-0.5">
                     <div
                       ref={docRef}
                       className="rv-page bg-white shadow-xl shadow-slate-900/10 rounded-xl text-[#222222] relative overflow-hidden ring-1 ring-slate-200 w-full"
-                      style={{ minHeight: 1050, fontFamily: "Arial, 'Segoe UI', sans-serif" }}
+                      style={{ minHeight: 1180, fontFamily: "Arial, 'Segoe UI', sans-serif" }}
                     >
-                      {/* Header */}
-                      <div className="px-6 pt-6 pb-4 text-center">
-                        <h1
-                          className="text-[22px] font-black uppercase tracking-[0.03em]"
-                          style={{ color: RV.dark }}
-                        >
-                          {COMPANY_LINE}
-                        </h1>
-                        <p className="text-[11px] mt-1.5" style={{ color: RV.grey }}>
-                          {COMPANY_ADDRESS}
-                        </p>
-                        <p className="text-[11px] mt-1 font-semibold" style={{ color: RV.dark }}>
-                          {COMPANY_CONTACT}
-                        </p>
+                      {/* Header: Left Logo | Center Text | Right QR */}
+                      <div className="flex items-center justify-between gap-3 px-6 pt-6 pb-2">
+                        <div className="flex items-center justify-start w-[26%] shrink-0">
+                          {logoDataUrl ? (
+                            <img
+                              src={logoDataUrl}
+                              alt="Company Logo"
+                              className="object-contain"
+                              style={{ height: logoHeight, maxWidth: 150 }}
+                            />
+                          ) : (
+                            <img
+                              src="/receipt-logo.png"
+                              alt="Expert Marketing & Developers Logo"
+                              className="object-contain"
+                              style={{ height: logoHeight, maxWidth: 150 }}
+                            />
+                          )}
+                        </div>
+                        <div className="text-center flex-1 space-y-1">
+                          <h1
+                            className="text-[19px] font-black uppercase tracking-[0.05em] inline-block pb-0.5 border-b-2 border-[#222222]"
+                            style={{ color: RV.dark }}
+                          >
+                            {COMPANY_LINE}
+                          </h1>
+                          <p className="text-[10.5px] mt-1 leading-tight max-w-[480px] mx-auto" style={{ color: RV.grey }}>
+                            {COMPANY_ADDRESS}
+                          </p>
+                          <p className="text-[10.5px] font-semibold pt-0.5" style={{ color: RV.dark }}>
+                            {COMPANY_CONTACT_ALT}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-center justify-center w-[26%] shrink-0">
+                          <div
+                            ref={qrHostRef}
+                            className="p-0.5 border border-slate-300 bg-white"
+                            style={{ width: qrSize + 4, height: qrSize + 4 }}
+                          />
+                          <span className="text-[8.5px] font-bold text-slate-800 mt-1 uppercase tracking-tight">
+                            Scan to verify
+                          </span>
+                        </div>
                       </div>
 
                       {/* Banner */}
                       <div
                         className="flex items-center justify-center"
-                        style={{ backgroundColor: RV.banner, height: 52 }}
+                        style={{ backgroundColor: RV.banner, height: 46 }}
                       >
-                        <h2 className="text-white font-black uppercase tracking-[0.12em] text-[21px]">
+                        <h2 className="text-white font-black uppercase tracking-[0.15em] text-[19px]">
                           Receipt Voucher
                         </h2>
                       </div>
 
                       {/* Field grid — exact layout of Expert_Receipt_Voucher.pdf */}
-                      <div className="px-6 pt-6">
+                      <div className="px-6 pt-5">
                         <div className="rounded-md overflow-hidden" style={{ border: `1px solid ${RV.border}` }}>
                           {/* Row 1: Receipt No | Reg # | Date | Amount */}
                           <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
-                            <FieldCell label="Receipt No" value={form.receiptNo} onChange={setField('receiptNo')} kind="text" />
-                            <FieldCell label="Reg #" value={form.regNo} onChange={setField('regNo')} kind="text" />
-                            <FieldCell label="Date" value={form.dated} onChange={setField('dated')} kind="text" />
-                            <FieldCell label="Amount" value={form.amount} onChange={setField('amount')} kind="number" merged />
+                            <FieldCell label="Receipt No" value={form.receiptNo} onChange={setField('receiptNo')} kind="text" labelW={34} />
+                            <FieldCell label="Reg #" value={form.regNo} onChange={setField('regNo')} kind="text" labelW={24} />
+                            <FieldCell label="Date" value={formatDatePDF(form.dated)} onChange={setField('dated')} kind="text" labelW={18} />
+                            <FieldCell label="Amount" value={form.amount} onChange={setField('amount')} kind="number" labelW={20} merged />
                           </div>
 
                           {/* Row 2: Received From (full width) */}
                           <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
-                            <FieldCell label="Received From" value={form.receivedFrom} onChange={setField('receivedFrom')} kind="text" merged />
+                            <FieldCell
+                              label="Received From"
+                              value={form.receivedFrom}
+                              onChange={setField('receivedFrom')}
+                              kind="text"
+                              merged
+                              labelW={9}
+                            />
                           </div>
 
-                          {/* Row 3: Amount in Words (full width) */}
+                          {/* Row 3: Amount in Words | Current Balance | Payment Type | Previous Balance */}
                           <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
                             <FieldCell
                               label="Amount in Words"
                               value={amountWords || autoWords}
                               onChange={setField('amountWords')}
                               kind="text"
+                              labelW={34}
+                              twoLine={false}
+                            />
+                            <FieldCell
+                              label="Current Balance"
+                              value={String(currentBalance)}
+                              onChange={() => undefined}
+                              kind="text"
+                              labelW={24}
+                              bold
+                            />
+                            <FieldCell
+                              label="Payment Type"
+                              value={form.paymentType}
+                              onChange={setField('paymentType')}
+                              kind="text"
+                              labelW={18}
+                            />
+                            <FieldCell
+                              label="Previous Balance"
+                              value={form.previousBalance}
+                              onChange={setField('previousBalance')}
+                              kind="number"
+                              labelW={20}
                               merged
                             />
                           </div>
 
-                          {/* Row 4: Current Balance | Amount Received */}
-                          <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
-                            <FieldCell label="Current Balance" value={String(currentBalance)} onChange={() => undefined} kind="text" />
-                            <FieldCell label="Amount Received" value={form.amount} onChange={setField('amount')} kind="number" merged />
-                          </div>
-
-                          {/* Row 5: Payment Type | Payment Via */}
-                          <div className="flex" style={{ borderBottom: `1px solid ${RV.border}` }}>
-                            <FieldCell label="Payment Type" value={form.paymentType} onChange={setField('paymentType')} kind="text" />
-                            <FieldCell label="Payment Via" value={form.paymentVia} onChange={setField('paymentVia')} kind="text" merged />
-                          </div>
-
-                          {/* Row 6: Previous Balance | File Details */}
+                          {/* Row 4: Payment Via | File Details */}
                           <div className="flex">
-                            <FieldCell label="Previous Balance" value={form.previousBalance} onChange={setField('previousBalance')} kind="number" />
-                            <FieldCell label="File Details" value={form.fileDetails} onChange={setField('fileDetails')} kind="text" merged />
+                            <FieldCell label="Payment Via" value={form.paymentVia} onChange={setField('paymentVia')} kind="text" labelW={34} />
+                            <FieldCell label="File Details" value={form.fileDetails} onChange={setField('fileDetails')} kind="text" labelW={24} merged />
                           </div>
                         </div>
 
@@ -1018,14 +1230,14 @@ export default function ReceiptVoucherPage({ onNotify }: ReceiptVoucherPageProps
                         </div>
                       </div>
 
-                      {/* Signatures */}
-                      <div className="px-6 mt-6 grid grid-cols-2 gap-6 text-[12px] font-semibold">
+                      {/* Signatures: Received By (left) | Sign & Seal (right) matches PDF */}
+                      <div className="px-6 mt-7 grid grid-cols-2 gap-6 text-[11px] font-semibold">
                         <div>
-                          Sign &amp; Seal: <span className="border-b border-[#222222] inline-block w-40" />
+                          Received By:{' '}
+                          <span className="border-b border-[#222222] inline-block w-44" />
                         </div>
                         <div className="text-right">
-                          Received By:{' '}
-                          <span className="border-b border-[#222222] inline-block w-40" />
+                          Sign &amp; Seal: <span className="border-b border-[#222222] inline-block w-44" />
                         </div>
                       </div>
 

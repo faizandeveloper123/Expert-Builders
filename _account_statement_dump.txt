@@ -1,0 +1,71 @@
+=== SHEET: Account Statement dims: A1:H61 ===
+MERGED CELLS: [<MergedCellRange B11:D11>, <MergedCellRange A52:D55>, <MergedCellRange B60:C61>, <MergedCellRange B8:D8>, <MergedCellRange G15:H16>, <MergedCellRange F8:H8>, <MergedCellRange A15:C16>, <MergedCellRange B10:D10>, <MergedCellRange C2:H2>, <MergedCellRange F13:H13>, <MergedCellRange B9:D9>, <MergedCellRange F9:H9>, <MergedCellRange E54:G54>, <MergedCellRange E52:H52>, <MergedCellRange A50:B50>, <MergedCellRange D60:E61>, <MergedCellRange F60:G61>, <MergedCellRange A57:H57>, <MergedCellRange E53:G53>, <MergedCellRange C3:H3>, <MergedCellRange A5:H5>, <MergedCellRange B7:D7>, <MergedCellRange F11:H11>, <MergedCellRange E55:G55>, <MergedCellRange F10:H10>, <MergedCellRange D15:F16>, <MergedCellRange F12:H12>, <MergedCellRange F7:H7>, <MergedCellRange B12:D12>, <MergedCellRange A58:H58>, <MergedCellRange C1:H1>]
+C1="EXPERT MARKETING AND DEVELOPER'S"
+C2='Abdul Majeed Plaza, Main Chakri Road, Peer Mehar Ali Shah Town, Near Royal Grand Marquee, Rawalpindi.'
+C3='Mobile # 0300-5551350   |   Ph: 051-5575280   |   Email: expertbuilders39@gmail.com'
+
+A5='ACCOUNT STATEMENT'
+
+A7='Registration No:' | B7='ABAC123' | E7='Booking Date:' | F7='N/A'
+A8='Member Name:' | B8='XYZ' | E8='File #:' | F8='123'
+A9='S/O:' | B9='ABC' | E9='Plot Size:' | F9='5.00'
+A10='CNIC:' | B10='12345678-9' | E10='File Type:' | F10='File'
+A11='Address:' | B11='RAWALPINDI' | E11='Block:' | F11='E'
+A12='Phone No:' | B12='1234567890' | E12='Street:' | F12='0'
+E13='File Status:' | F13='Active'
+
+A15='Cost of Land:\nRs. 1,250,000/-\n(Exclusive of Development Charges)' | D15='Received Amount:\nRs. 806,924/-' | G15='Balance Amount:\nRs. 443,076/-'
+
+
+A18='#' | B18='Description' | C18='Inst No' | D18='Due Date' | E18='Due Amount' | F18='Paid Amount' | G18='Paid Date' | H18='Out Standing'
+A19=1 | B19='Booking/Advance' | C19='-' | D19='N/A' | E19=1250000 | F19=162500 | G19='N/A' | H19=1087500
+A20=2 | B20='Regular Installment' | C20=1 | D20='05 SEP 2026' | E20=12500 | F20='-' | G20='-' | H20='-'
+A21=3 | B21='Regular Installment' | C21=2 | D21='-' | F21='-' | G21='-' | H21='-'
+A22=4 | B22='Regular Installment' | C22=3 | D22='-' | E22='-' | F22='-' | G22='-' | H22='-'
+A23=5 | B23='Regular Installment' | C23=4 | D23='-' | E23='-' | F23='-' | G23='-' | H23='-'
+A24=6 | B24='Regular Installment' | C24=5 | D24='-' | E24='-' | F24='-' | G24='-' | H24='-'
+A25=7 | B25='Half-Yearly Installment' | C25=6 | D25='-' | E25='-' | F25='-' | G25='-' | H25='-'
+A26=8 | B26='Regular Installment' | C26=7 | D26='-' | E26='-' | F26='-' | G26='-' | H26='-'
+A27=9 | B27='Regular Installment' | C27=8 | D27='-' | E27='-' | F27='-' | G27='-' | H27='-'
+A28=10 | B28='Regular Installment' | C28=9 | D28='-' | E28='-' | F28='-' | G28='-' | H28='-'
+A29=11 | B29='Regular Installment' | C29=10 | D29='-' | E29='-' | F29='-' | G29='-' | H29='-'
+A30=12 | B30='Regular Installment' | C30=11 | D30='-' | E30='-' | F30='-' | G30='-' | H30='-'
+A31=13 | B31='Half-Yearly Installment' | C31=12 | D31='-' | E31='-' | F31='-' | G31='-' | H31='-'
+A32=14 | B32='Regular Installment' | C32=13 | D32='-' | E32='-' | F32='-' | G32='-' | H32='-'
+A33=15 | B33='Regular Installment' | C33=14 | D33='-' | E33='-' | F33='-' | G33='-' | H33='-'
+A34=16 | B34='Regular Installment' | C34=15 | D34='-' | E34='-' | F34='-' | G34='-' | H34='-'
+A35=17 | B35='Regular Installment' | C35=16 | D35='-' | E35='-' | F35='-' | G35='-' | H35='-'
+A36=18 | B36='Regular Installment' | C36=17 | D36='-' | E36='-' | F36='-' | G36='-' | H36='-'
+A37=19 | B37='Half-Yearly Installment' | C37=18 | D37='-' | E37='-' | F37='-' | G37='-' | H37='-'
+A38=20 | B38='Regular Installment' | C38=19 | D38='-' | E38='-' | F38='-' | G38='-' | H38='-'
+A39=21 | B39='Regular Installment' | C39=20 | D39='-' | E39='-' | F39='-' | G39='-' | H39='-'
+A40=22 | B40='Regular Installment' | C40=21 | D40='-' | E40='-' | F40='-' | G40='-' | H40='-'
+A41=23 | B41='Regular Installment' | C41=22 | D41='-' | E41='-' | F41='-' | G41='-' | H41='-'
+A42=24 | B42='Regular Installment' | C42=23 | D42='-' | E42='-' | F42='-' | G42='-' | H42='-'
+A43=25 | B43='Half-Yearly Installment' | C43=24 | D43='-' | E43='-' | F43='-' | G43='-' | H43='-'
+A44=26 | B44='Regular Installment' | C44=25 | D44='-' | E44='-' | F44='-' | G44='-' | H44='-'
+A45=27 | B45='Regular Installment' | C45=26 | D45='-' | E45='-' | F45='-' | G45='-' | H45='-'
+A46=28 | B46='Regular Installment' | C46=27 | D46='-' | E46='-' | F46='-' | G46='-' | H46='-'
+A47=29 | B47='Regular Installment' | C47=28 | D47='-' | E47='-' | F47='-' | G47='-' | H47='-'
+A48=30 | B48='Regular Installment' | C48=29 | D48='-' | E48='-' | F48='-' | G48='-' | H48='-'
+A49=31 | B49='Half-Yearly Installment' | C49=30 | D49='-' | E49='-' | F49='-' | G49='-' | H49='-'
+D50='05 SEP 2026' | E50=1087500 | F50=162500
+
+A52='Remarks:\n\nPayment Progress: 64.55%\n● Payment Pending' | E52='Final Summary:'
+E53='Total Property Value:' | H53=1250000
+E54='Total Amount Received:' | H54=806924
+E55='Balance Payable:' | H55=443076
+
+A57='This is a computer-generated customer ledger statement. For any discrepancies, please contact accounts department.'
+A58='Generated on: 04 May 2026 10:46 AM  |  Page 1 of 1'
+
+B60='Prepared By\nAccounts Department' | D60='Checked By\nFinance Manager' | F60='Authorized By\nDirector'
+
+--- styling (partially) ---
+A5 font=Arial sz=17.0 bold=True align=center fill=FF0B5EA8
+B5 font=Calibri sz=11.0 bold=False align=None fill=None
+A7 font=Arial sz=9.0 bold=True align=None fill=FFD8ECFA
+D15 font=Arial sz=11.0 bold=True align=center fill=FFEAF4FC
+A18 font=Arial sz=9.0 bold=True align=center fill=FF0B5EA8
+H18 font=Arial sz=9.0 bold=True align=center fill=FF0B5EA8
+A50 font=Arial sz=9.0 bold=True align=center fill=FFD8ECFA

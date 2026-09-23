@@ -69,13 +69,14 @@ function loadHtml2Pdf(): Promise<Html2PdfApi> {
   });
 }
 
-/** Excel sheet palette (Account_Statement.xlsx). */
+/** Excel sheet palette (matches account_statement_sheet_pdf_generator.html). */
 const XLS = {
-  header: '#0B5EA8', // leading header rows / column title (FF0B5EA8)
-  rowFillA: '#D8ECFA', // alternating ledger rows (FFD8ECFA)
-  rowFillB: '#EAF4FC', // remaining fills (FFEAF4FC)
-  rule: '#9DC3E6', // soft gridlines
-  dark: '#1F2937',
+  header: '#0a529c', // statement.blue (leading band / column title)
+  headerDeep: '#004b93', // statement.headerBlue
+  rowFillA: '#eef5fc', // statement.lightBlue (alternating ledger rows)
+  rowFillB: '#f7fbfe', // lighter fill for the alternate half
+  rule: '#a3c7e8', // statement.borderBlue (soft gridlines)
+  dark: '#0a3866', // statement.darkText
 };
 
 /* ---------------------- local draft row representation ---------------- */
@@ -612,7 +613,7 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
         <div
           ref={sheetRef}
           className="as-sheet bg-white shadow-xl shadow-slate-900/10 rounded-xl ring-1 ring-slate-200 text-[#1F2937] w-full min-w-[1180px] overflow-hidden"
-          style={{ fontFamily: "Arial, 'Segoe UI', sans-serif" }}
+          style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}
         >
           {/* ===== Header block — Excel rows 1..5 ===== */}
           <div className="pt-4 pb-0 text-center" style={{ paddingLeft: 28, paddingRight: 28 }}>
@@ -635,7 +636,7 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
           {/* ACCOUNT STATEMENT band */}
           <div
             className="mt-3 text-center uppercase tracking-[0.25em]"
-            style={{ backgroundColor: XLS.header, color: '#fff', fontSize: '17pt', fontWeight: 900, padding: '4px 0', fontFamily: 'Arial, sans-serif' }}
+            style={{ backgroundColor: XLS.header, color: '#fff', fontSize: '17pt', fontWeight: 900, padding: '4px 0', fontFamily: "'Segoe UI', Arial, sans-serif" }}
           >
             Account Statement
           </div>

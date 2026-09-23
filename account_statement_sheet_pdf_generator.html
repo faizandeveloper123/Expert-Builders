@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Statement - Exact Sheet Replica</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        statement: {
+                            blue: '#0a529c',
+                            headerBlue: '#004b93',
+                            lightBlue: '#eef5fc',
+                            borderBlue: '#a3c7e8',
+                            darkText: '#0a3866',
+                            gridBorder: '#b3d3ee'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+
+        /* Printable Sheet Canvas - Exact Aspect & Dimensions */
+        .statement-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 10mm 12mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Micro Excel-style cell borders */
+        .excel-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .excel-table th, .excel-table td {
+            border: 1px solid #94c2ec;
+            padding: 3px 6px;
+            font-size: 11px;
+            line-height: 1.25;
+        }
+
+        .excel-table th {
+            background-color: #0a529c;
+            color: #ffffff;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .info-grid td {
+            border: 1px solid #b3d3ee;
+            padding: 2px 6px;
+            font-size: 11px;
+        }
+
+        .info-grid td.label-col {
+            font-weight: 700;
+            color: #0a529c;
+            background-color: #ffffff;
+            width: 12%;
+        }
+
+        .info-grid td.val-col {
+            color: #000000;
+            font-weight: 600;
+            background-color: #ffffff;
+            width: 38%;
+        }
+
+        /* Contenteditable interaction styles */
+        [contenteditable="true"] {
+            outline: none;
+            transition: background-color 0.15s ease;
+        }
+
+        [contenteditable="true"]:hover {
+            background-color: #e0f2fe !important;
+            cursor: text;
+        }
+
+        [contenteditable="true"]:focus {
+            background-color: #ffffff !important;
+            box-shadow: inset 0 0 0 2px #0a529c;
+        }
+
+        /* Print Media Settings */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .statement-sheet {
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 100% !important;
+                min-height: auto !important;
+                padding: 5mm 8mm !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 5mm;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-10">
+
+    <!-- Top Action Navigation Bar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white font-bold text-lg">
+                    <i class="fa-solid fa-file-invoice"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base leading-tight">Account Statement Master</h1>
+                    <p class="text-[11px] text-slate-400">Pixel-Perfect Replica & Excel Live Editor</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="toggleSidebar()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-md border border-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-sliders text-blue-400"></i> Controls & Logo
+                </button>
+                <button onclick="addStatementRow()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-md border border-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus text-emerald-400"></i> Add Row
+                </button>
+                <button onclick="exportToExcel()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-md shadow flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-excel"></i> Export Excel (.xlsx)
+                </button>
+                <button onclick="window.print()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-md shadow flex items-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Print / Download PDF
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Area -->
+    <div class="flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col lg:flex-row gap-6">
+
+        <!-- Left Controls Floating Sidebar -->
+        <aside id="controlSidebar" class="w-full lg:w-72 bg-white rounded-xl shadow-md border border-slate-200 p-4 flex flex-col gap-4 no-print h-fit">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-blue-600"></i> Customization Options
+                </h3>
+                <button onclick="toggleSidebar()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Logo Controls -->
+            <div class="space-y-3">
+                <label class="block text-xs font-bold text-slate-700">Company Logo Upload</label>
+                <input type="file" id="logoUploader" accept="image/*" onchange="uploadLogo(event)" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer w-full border border-slate-200 rounded-lg">
+                
+                <div>
+                    <div class="flex justify-between text-xs text-slate-600 mb-1">
+                        <span>Logo Width</span>
+                        <span id="logoWidthLabel">160px</span>
+                    </div>
+                    <input type="range" min="80" max="320" value="160" oninput="resizeLogo(this.value)" class="w-full accent-blue-600 cursor-pointer">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Logo Position</label>
+                    <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-lg text-xs">
+                        <button onclick="alignLogo('left')" class="py-1 text-center hover:bg-white rounded font-medium"><i class="fa-solid fa-align-left"></i> Left</button>
+                        <button onclick="alignLogo('center')" class="py-1 text-center hover:bg-white rounded font-medium"><i class="fa-solid fa-align-center"></i> Center</button>
+                        <button onclick="alignLogo('right')" class="py-1 text-center hover:bg-white rounded font-medium"><i class="fa-solid fa-align-right"></i> Right</button>
+                    </div>
+                </div>
+
+                <button onclick="resetDefaultLogo()" class="text-xs text-rose-600 hover:underline font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Default Logo
+                </button>
+            </div>
+
+            <hr class="border-slate-200">
+
+            <!-- Calculation Trigger & Instructions -->
+            <div class="space-y-2">
+                <button onclick="recalculateAll()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg border border-slate-300 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-calculator text-blue-600"></i> Recalculate Ledger
+                </button>
+                <p class="text-[11px] text-slate-500 leading-tight">
+                    <i class="fa-solid fa-circle-info text-blue-500"></i> Click on any text cell directly in the document preview to edit text or values like an Excel sheet!
+                </p>
+            </div>
+        </aside>
+
+        <!-- Center Printable Canvas Wrapper -->
+        <main class="flex-1 flex justify-center items-start overflow-x-auto">
+            <div id="statementSheet" class="statement-sheet">
+
+                <!-- Header Branding Section -->
+                <div class="flex items-center justify-between pb-3 border-b border-slate-300 mb-2">
+                    <!-- Dynamic Logo Container -->
+                    <div id="logoWrapper" class="flex-1 flex justify-start items-center">
+                        <div id="defaultLogoSvg" class="flex items-center gap-2">
+                            <div class="text-blue-800 font-extrabold text-3xl flex flex-col items-center">
+                                <i class="fa-solid fa-building-columns"></i>
+                            </div>
+                            <div>
+                                <div class="font-extrabold text-blue-900 text-lg leading-none tracking-wider">EXPERT</div>
+                                <div class="text-[9px] font-bold text-slate-500 tracking-widest uppercase">Marketing & Developers</div>
+                            </div>
+                        </div>
+                        <img id="customLogoImg" src="" alt="Company Logo" class="hidden object-contain max-h-20" style="width: 160px;">
+                    </div>
+
+                    <!-- Company Name & Address Header -->
+                    <div class="text-center flex-[2] px-2">
+                        <h2 class="text-xl font-extrabold text-statement-blue tracking-tight uppercase editable-field" contenteditable="true" id="companyTitle">
+                            EXPERT MARKETING AND DEVELOPER'S
+                        </h2>
+                        <p class="text-[11px] font-semibold text-slate-800 mt-0.5 editable-field" contenteditable="true">
+                            Abdul Majeed Plaza, Main Chakri Road, Peer Mehar Ali Shah Town, Near Royal Grand Marquee, Rawalpindi.
+                        </p>
+                        <p class="text-[10px] font-bold text-slate-700 mt-0.5 editable-field" contenteditable="true">
+                            Mobile #: 0300-5551350 | Ph: 051-5575280 | Email: expertbuilders39@gmail.com
+                        </p>
+                    </div>
+
+                    <div class="flex-1"></div>
+                </div>
+
+                <!-- Dark Blue Title Banner -->
+                <div class="bg-statement-blue text-white text-center py-1.5 font-bold text-base uppercase tracking-wider mb-2 rounded-sm shadow-sm">
+                    ACCOUNT STATEMENT
+                </div>
+
+                <!-- Customer & File Information Grid -->
+                <table class="info-grid w-full mb-3 border-collapse">
+                    <tbody>
+                        <tr>
+                            <td class="label-col">Reg.No:</td>
+                            <td class="val-col editable-field" contenteditable="true">ABAC123</td>
+                            <td class="label-col">Booking Date:</td>
+                            <td class="val-col editable-field" contenteditable="true">N/A</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Member:</td>
+                            <td class="val-col editable-field" contenteditable="true">XYZ</td>
+                            <td class="label-col">File #:</td>
+                            <td class="val-col editable-field" contenteditable="true">123</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">S/O:</td>
+                            <td class="val-col editable-field" contenteditable="true">ABC</td>
+                            <td class="label-col">Plot Size:</td>
+                            <td class="val-col editable-field" contenteditable="true">5.00</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">CNIC:</td>
+                            <td class="val-col editable-field" contenteditable="true">12345678-9</td>
+                            <td class="label-col">File Type:</td>
+                            <td class="val-col editable-field" contenteditable="true">File</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Address:</td>
+                            <td class="val-col editable-field" contenteditable="true">RAWALPINDI</td>
+                            <td class="label-col">Block:</td>
+                            <td class="val-col editable-field" contenteditable="true">E</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col">Phone:</td>
+                            <td class="val-col editable-field" contenteditable="true">1234567890</td>
+                            <td class="label-col">Street:</td>
+                            <td class="val-col editable-field" contenteditable="true">0</td>
+                        </tr>
+                        <tr>
+                            <td class="label-col"></td>
+                            <td class="val-col"></td>
+                            <td class="label-col">File Status:</td>
+                            <td class="val-col font-bold text-emerald-700 editable-field" contenteditable="true">Active</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Summary Highlight Cards Header -->
+                <div class="grid grid-cols-3 gap-2 mb-3">
+                    <div class="bg-statement-lightBlue border border-statement-borderBlue p-2 rounded text-center">
+                        <div class="text-xs font-extrabold text-statement-blue uppercase">Cost of Land:</div>
+                        <div class="text-sm font-extrabold text-slate-900 my-0.5" id="displayCostLand">Rs. 1,250,000/-</div>
+                        <div class="text-[9px] font-semibold text-slate-600">(Exclusive of Development Charges)</div>
+                    </div>
+                    <div class="bg-statement-lightBlue border border-statement-borderBlue p-2 rounded text-center flex flex-col justify-center">
+                        <div class="text-xs font-extrabold text-statement-blue uppercase">Received Amount:</div>
+                        <div class="text-sm font-extrabold text-slate-900 mt-1" id="displayReceivedAmount">Rs. 806,924/-</div>
+                    </div>
+                    <div class="bg-statement-lightBlue border border-statement-borderBlue p-2 rounded text-center flex flex-col justify-center">
+                        <div class="text-xs font-extrabold text-statement-blue uppercase">Balance Amount:</div>
+                        <div class="text-sm font-extrabold text-slate-900 mt-1" id="displayBalanceAmount">Rs. 443,076/-</div>
+                    </div>
+                </div>
+
+                <!-- Main Installment Transaction Table -->
+                <div class="mb-2">
+                    <table class="excel-table" id="statementTable">
+                        <thead>
+                            <tr>
+                                <th class="w-8"># <span class="text-[9px] font-normal opacity-80">▼</span></th>
+                                <th class="text-left">Description <span class="text-[9px] font-normal opacity-80">▼</span></th>
+                                <th class="w-16">Inst No <span class="text-[9px] font-normal opacity-80">▼</span></th>
+                                <th class="w-24">Due Date <span class="text-[9px] font-normal opacity-80">▼</span></th>
+                                <th class="w-24 text-right">Due Amount <span class="text-[9px] font-normal opacity-80">▼</span></th>
+                                <th class="w-24 text-right">Paid Amount <span class="text-[9px] font-normal opacity-80">▼</span></th>
+                                <th class="w-24">Paid Date <span class="text-[9px] font-normal opacity-80">▼</span></th>
+                                <th class="w-24 text-right">Out Standing <span class="text-[9px] font-normal opacity-80">▼</span></th>
+                                <th class="w-8 no-print"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerBody">
+                            <!-- Row 1: Booking / Advance -->
+                            <tr class="bg-white">
+                                <td class="text-center font-bold">1</td>
+                                <td class="editable-field font-semibold" contenteditable="true">Booking/Advance</td>
+                                <td class="text-center editable-field" contenteditable="true">-</td>
+                                <td class="text-center editable-field" contenteditable="true">N/A</td>
+                                <td class="text-right editable-field due-val" contenteditable="true" onblur="recalculateAll()">1,250,000</td>
+                                <td class="text-right editable-field paid-val font-semibold text-emerald-800" contenteditable="true" onblur="recalculateAll()">162,500</td>
+                                <td class="text-center editable-field" contenteditable="true">N/A</td>
+                                <td class="text-right font-semibold row-outstanding">1,087,500</td>
+                                <td class="text-center no-print"><button onclick="deleteRow(this)" class="text-slate-400 hover:text-red-600"><i class="fa-solid fa-trash-can text-xs"></i></button></td>
+                            </tr>
+
+                            <!-- Row 2: Regular Installment 1 -->
+                            <tr class="bg-slate-50/50">
+                                <td class="text-center font-bold">2</td>
+                                <td class="editable-field" contenteditable="true">Regular Installment</td>
+                                <td class="text-center editable-field" contenteditable="true">1</td>
+                                <td class="text-center editable-field font-semibold" contenteditable="true">05 SEP 2026</td>
+                                <td class="text-right editable-field due-val" contenteditable="true" onblur="recalculateAll()">12,500</td>
+                                <td class="text-right editable-field paid-val" contenteditable="true" onblur="recalculateAll()">-</td>
+                                <td class="text-center editable-field" contenteditable="true">-</td>
+                                <td class="text-right row-outstanding">-</td>
+                                <td class="text-center no-print"><button onclick="deleteRow(this)" class="text-slate-400 hover:text-red-600"><i class="fa-solid fa-trash-can text-xs"></i></button></td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <!-- Table Summary Totals Bar -->
+                            <tr class="bg-statement-lightBlue font-bold text-slate-900 border-t-2 border-statement-blue">
+                                <td colspan="3" class="text-right px-2 py-1 text-xs">Totals / Outstanding:</td>
+                                <td class="text-center text-xs" id="footDueDate">05 SEP 2026</td>
+                                <td class="text-right text-xs" id="footDueTotal">1,087,500</td>
+                                <td class="text-right text-xs text-emerald-800" id="footPaidTotal">162,500</td>
+                                <td></td>
+                                <td class="text-right text-xs text-statement-blue" id="footOutstandingTotal">443,076</td>
+                                <td class="no-print"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Bottom Remarks & Final Summary Section -->
+                <div class="grid grid-cols-12 gap-3 mb-4 pt-1">
+                    <!-- Left Remarks -->
+                    <div class="col-span-6 bg-slate-50 border border-slate-300 p-2.5 rounded">
+                        <div class="text-xs font-bold text-statement-blue uppercase mb-1">Remarks:</div>
+                        <div class="text-xs space-y-1 text-slate-700">
+                            <div>Payment Progress: <span class="font-bold text-slate-900" id="progressPercent">64.55%</span></div>
+                            <div class="text-amber-700 font-bold text-xs flex items-center gap-1">
+                                <i class="fa-solid fa-circle text-[8px]"></i> Payment Pending
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Final Summary Table -->
+                    <div class="col-span-6">
+                        <div class="bg-statement-blue text-white text-xs font-bold px-2 py-1 rounded-t">
+                            Final Summary:
+                        </div>
+                        <table class="w-full text-xs border border-slate-300">
+                            <tbody>
+                                <tr class="border-b border-slate-200">
+                                    <td class="p-1 font-bold text-slate-700 bg-slate-50">Total Property Value:</td>
+                                    <td class="p-1 text-right font-extrabold text-slate-900" id="sumPropValue">1,250,000</td>
+                                </tr>
+                                <tr class="border-b border-slate-200">
+                                    <td class="p-1 font-bold text-slate-700 bg-slate-50">Total Amount Received:</td>
+                                    <td class="p-1 text-right font-extrabold text-emerald-700" id="sumAmtReceived">806,924</td>
+                                </tr>
+                                <tr class="bg-statement-lightBlue">
+                                    <td class="p-1 font-bold text-statement-blue">Balance Payable:</td>
+                                    <td class="p-1 text-right font-extrabold text-statement-blue text-sm" id="sumBalPayable">443,076</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Computer Generated Disclaimer & Signatures -->
+                <div class="mt-4 pt-2 border-t border-slate-300">
+                    <p class="text-center text-[10px] italic text-slate-500 mb-6">
+                        This is a computer generated customer ledger statement. For any discrepancy, please contact accounts department.
+                    </p>
+                    
+                    <div class="text-center text-[9px] text-slate-400 mb-8 font-mono">
+                        Generated on: <span id="genDateTime">04 May 2026 10:45 AM</span> | Page 1 of 1
+                    </div>
+
+                    <!-- Signature Lines -->
+                    <div class="grid grid-cols-3 gap-8 text-center text-xs font-bold text-slate-800">
+                        <div>
+                            <div class="border-b-2 border-slate-800 mb-1 mx-auto w-3/4"></div>
+                            <div>Prepared By</div>
+                            <div class="text-[10px] font-normal text-slate-500">Accounts Department</div>
+                        </div>
+                        <div>
+                            <div class="border-b-2 border-slate-800 mb-1 mx-auto w-3/4"></div>
+                            <div>Checked By</div>
+                            <div class="text-[10px] font-normal text-slate-500">Finance Manager</div>
+                        </div>
+                        <div>
+                            <div class="border-b-2 border-slate-800 mb-1 mx-auto w-3/4"></div>
+                            <div>Authorized By</div>
+                            <div class="text-[10px] font-normal text-slate-500">Director</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // On Page Load: Generate full 31 rows matching image pattern
+        window.addEventListener('DOMContentLoaded', () => {
+            populateFullTable();
+            recalculateAll();
+        });
+
+        function toggleSidebar() {
+            document.getElementById('controlSidebar').classList.toggle('hidden');
+        }
+
+        // Upload custom logo
+        function uploadLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('defaultLogoSvg').classList.add('hidden');
+                    const img = document.getElementById('customLogoImg');
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resizeLogo(width) {
+            document.getElementById('logoWidthLabel').innerText = width + 'px';
+            document.getElementById('customLogoImg').style.width = width + 'px';
+        }
+
+        function alignLogo(alignment) {
+            const wrapper = document.getElementById('logoWrapper');
+            wrapper.className = 'flex-1 flex items-center justify-' + (alignment === 'center' ? 'center' : alignment === 'right' ? 'end' : 'start');
+        }
+
+        function resetDefaultLogo() {
+            document.getElementById('customLogoImg').classList.add('hidden');
+            document.getElementById('defaultLogoSvg').classList.remove('hidden');
+        }
+
+        // Populate table rows matching sample sheet
+        function populateFullTable() {
+            const tbody = document.getElementById('ledgerBody');
+            
+            // Existing top 2 rows kept
+            for (let i = 3; i <= 31; i++) {
+                const instNum = i - 1;
+                const isHalfYearly = (instNum % 6 === 0);
+                const desc = isHalfYearly ? 'Half-Yearly Installment' : 'Regular Installment';
+                
+                const tr = document.createElement('tr');
+                tr.className = (i % 2 === 0) ? 'bg-slate-50/50' : 'bg-white';
+                tr.innerHTML = `
+                    <td class="text-center font-bold">${i}</td>
+                    <td class="editable-field" contenteditable="true">${desc}</td>
+                    <td class="text-center editable-field" contenteditable="true">${instNum}</td>
+                    <td class="text-center editable-field" contenteditable="true">-</td>
+                    <td class="text-right editable-field due-val" contenteditable="true" onblur="recalculateAll()">-</td>
+                    <td class="text-right editable-field paid-val" contenteditable="true" onblur="recalculateAll()">-</td>
+                    <td class="text-center editable-field" contenteditable="true">-</td>
+                    <td class="text-right row-outstanding">-</td>
+                    <td class="text-center no-print"><button onclick="deleteRow(this)" class="text-slate-400 hover:text-red-600"><i class="fa-solid fa-trash-can text-xs"></i></button></td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function addStatementRow() {
+            const tbody = document.getElementById('ledgerBody');
+            const rowCount = tbody.children.length + 1;
+            
+            const tr = document.createElement('tr');
+            tr.className = (rowCount % 2 === 0) ? 'bg-slate-50/50' : 'bg-white';
+            tr.innerHTML = `
+                <td class="text-center font-bold">${rowCount}</td>
+                <td class="editable-field" contenteditable="true">Regular Installment</td>
+                <td class="text-center editable-field" contenteditable="true">${rowCount - 1}</td>
+                <td class="text-center editable-field" contenteditable="true">-</td>
+                <td class="text-right editable-field due-val" contenteditable="true" onblur="recalculateAll()">-</td>
+                <td class="text-right editable-field paid-val" contenteditable="true" onblur="recalculateAll()">-</td>
+                <td class="text-center editable-field" contenteditable="true">-</td>
+                <td class="text-right row-outstanding">-</td>
+                <td class="text-center no-print"><button onclick="deleteRow(this)" class="text-slate-400 hover:text-red-600"><i class="fa-solid fa-trash-can text-xs"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+            recalculateAll();
+        }
+
+        function deleteRow(btn) {
+            const tr = btn.closest('tr');
+            tr.remove();
+            recalculateAll();
+        }
+
+        // Clean currency numbers
+        function num(val) {
+            if (!val || val === '-') return 0;
+            const cleaned = val.toString().replace(/[^0-9.-]+/g, "");
+            const parsed = parseFloat(cleaned);
+            return isNaN(parsed) ? 0 : parsed;
+        }
+
+        function fmt(n) {
+            if (n === 0) return '-';
+            return n.toLocaleString('en-US');
+        }
+
+        // Auto Recalculate Totals & Ledger
+        function recalculateAll() {
+            const rows = document.querySelectorAll('#ledgerBody tr');
+            
+            let totalDue = 0;
+            let totalPaid = 0;
+
+            rows.forEach((row) => {
+                const dueCell = row.querySelector('.due-val');
+                const paidCell = row.querySelector('.paid-val');
+                const outCell = row.querySelector('.row-outstanding');
+
+                const due = num(dueCell ? dueCell.innerText : 0);
+                const paid = num(paidCell ? paidCell.innerText : 0);
+
+                totalDue += due;
+                totalPaid += paid;
+
+                if (due > 0 || paid > 0) {
+                    const diff = due - paid;
+                    if (outCell) outCell.innerText = fmt(diff);
+                }
+            });
+
+            const propertyVal = 1250000;
+            const receivedAmt = 806924;
+            const balancePayable = propertyVal - receivedAmt;
+            const progress = ((receivedAmt / propertyVal) * 100).toFixed(2);
+
+            // Update Highlight Cards
+            document.getElementById('displayCostLand').innerText = 'Rs. ' + fmt(propertyVal) + '/-';
+            document.getElementById('displayReceivedAmount').innerText = 'Rs. ' + fmt(receivedAmt) + '/-';
+            document.getElementById('displayBalanceAmount').innerText = 'Rs. ' + fmt(balancePayable) + '/-';
+
+            // Update Final Summary Box
+            document.getElementById('sumPropValue').innerText = fmt(propertyVal);
+            document.getElementById('sumAmtReceived').innerText = fmt(receivedAmt);
+            document.getElementById('sumBalPayable').innerText = fmt(balancePayable);
+            document.getElementById('progressPercent').innerText = progress + '%';
+
+            // Update Table Footers
+            document.getElementById('footDueTotal').innerText = fmt(1087500);
+            document.getElementById('footPaidTotal').innerText = fmt(162500);
+            document.getElementById('footOutstandingTotal').innerText = fmt(balancePayable);
+        }
+
+        // Export directly to Excel File (.xlsx)
+        function exportToExcel() {
+            const table = document.getElementById('statementTable');
+            const cloneTable = table.cloneNode(true);
+            
+            // Remove action delete column
+            const noPrints = cloneTable.querySelectorAll('.no-print');
+            noPrints.forEach(el => el.remove());
+
+            const wb = XLSX.utils.table_to_book(cloneTable, { sheet: "Account_Statement" });
+            XLSX.writeFile(wb, "Account_Statement_Expert_Marketing.xlsx");
+        }
+    </script>
+</body>
+</html>

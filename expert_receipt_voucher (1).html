@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expert Marketing & Developers - Exact Receipt Voucher</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QR Code JS library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandBlue: '#0b3c78',
+                        brandDark: '#0f172a'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Printable Paper Styling */
+        .document-paper {
+            background: #ffffff;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #cbd5e1;
+            padding: 32px 40px;
+            margin: 0 auto;
+        }
+
+        /* Table cell styling matching exact PDF grid */
+        .voucher-table {
+            border-collapse: collapse;
+            width: 100%;
+            border: 1px solid #475569;
+        }
+
+        .voucher-table td {
+            border: 1px solid #475569;
+            padding: 6px 8px;
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        .lbl {
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+        }
+
+        .val {
+            font-weight: 500;
+            color: #0f172a;
+        }
+
+        /* Print Media Styles */
+        @media print {
+            body {
+                background-color: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .printable-wrapper {
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .document-paper {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 15mm !important;
+            }
+
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-900 flex flex-col">
+
+    <!-- Top Action Navbar -->
+    <header class="no-print bg-slate-900 text-white sticky top-0 z-50 border-b border-slate-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <i class="fa-solid fa-receipt text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight">Expert Receipt Voucher Editor</h1>
+                    <p class="text-xs text-slate-400">Exact PDF Copy with Dynamic Controls & Resizers</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="toggleEditor()" class="px-3 py-1.5 text-xs sm:text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-sliders text-blue-400"></i>
+                    <span>Controls</span>
+                </button>
+                <button onclick="window.print()" class="px-4 py-1.5 text-xs sm:text-sm bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow transition flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Print / Save PDF</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-6">
+
+        <!-- Sidebar / Editor Form Panel -->
+        <aside id="editorPanel" class="no-print lg:w-96 bg-white rounded-xl shadow-md border border-slate-200 p-5 space-y-5 h-fit text-xs">
+            
+            <div class="flex items-center justify-between border-b pb-3">
+                <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-blue-600"></i>
+                    Voucher & Layout Controls
+                </h2>
+                <button onclick="resetDefaults()" class="text-xs text-slate-500 hover:text-blue-600 underline">
+                    Reset
+                </button>
+            </div>
+
+            <div class="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-1">
+
+                <!-- LOGO CONTROLS & RESIZER -->
+                <div class="space-y-3 bg-blue-50/50 p-3 rounded-lg border border-blue-200">
+                    <h3 class="font-bold text-blue-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                        <i class="fa-solid fa-image text-blue-600"></i>
+                        Left Logo Controls
+                    </h3>
+
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Upload Custom Logo</label>
+                        <input type="file" id="inputLogoFile" accept="image/*" class="w-full text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer">
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">Logo Size (Height in px)</label>
+                        <input type="range" id="inputLogoHeight" min="40" max="180" value="105" class="w-full accent-blue-600">
+                        <div class="text-[10px] text-right text-slate-500"><span id="valLogoHeight">105</span>px</div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <button onclick="removeCustomLogo()" class="text-[10px] text-red-600 hover:underline">Reset Default Logo</button>
+                    </div>
+                </div>
+
+                <!-- QR CODE CONTROLS & RESIZER -->
+                <div class="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <h3 class="font-bold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                        <i class="fa-solid fa-qrcode text-slate-700"></i>
+                        Right QR Code Controls
+                    </h3>
+
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">QR Code Size (px)</label>
+                        <input type="range" id="inputQrSize" min="60" max="160" value="105" class="w-full accent-slate-800">
+                        <div class="text-[10px] text-right text-slate-500"><span id="valQrSize">105</span>px</div>
+                    </div>
+                </div>
+
+                <!-- RECEIPT METADATA -->
+                <div class="space-y-2">
+                    <h3 class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Voucher Details</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Receipt No</label>
+                            <input type="text" id="inputReceiptNo" value="RDC-01462" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Reg #</label>
+                            <input type="text" id="inputRegNo" value="RDC-1487" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Date</label>
+                            <input type="text" id="inputDate" value="05 Apr 2025" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Status Stamp</label>
+                            <input type="text" id="inputStatusText" value="PAID" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FINANCIAL DETAILS -->
+                <div class="space-y-2 pt-2 border-t border-slate-200">
+                    <h3 class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Financial Data</h3>
+                    <div>
+                        <label class="block font-medium text-slate-600 mb-1">Received From</label>
+                        <input type="text" id="inputReceivedFrom" value="Abdul Raheem Khan" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Amount Received (PKR)</label>
+                            <input type="number" id="inputAmount" value="15000" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Previous Balance</label>
+                            <input type="number" id="inputPrevBalance" value="1400000" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-600 mb-1">Amount in Words</label>
+                        <input type="text" id="inputAmountWords" value="Fifteen Only Thousand only" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- PAYMENT METHOD & FILE -->
+                <div class="space-y-2 pt-2 border-t border-slate-200">
+                    <h3 class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Payment & File Info</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Payment Type</label>
+                            <input type="text" id="inputPaymentType" value="Advance" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Payment Via</label>
+                            <input type="text" id="inputPaymentVia" value="Cash" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-600 mb-1">File Details</label>
+                        <input type="text" id="inputFileDetails" value="File # 1487, Hill View Block Block" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- Printable Document Area -->
+        <div class="flex-1 flex justify-center items-start printable-wrapper overflow-x-auto pb-12">
+            
+            <div class="document-paper text-slate-900">
+
+                <!-- TOP HEADER: Left Logo | Center Text | Right QR Code -->
+                <div class="flex items-center justify-between gap-4 pb-2">
+                    
+                    <!-- LEFT: Logo with Size Resizer -->
+                    <div class="flex items-center justify-start min-w-[120px]" id="logoContainer">
+                        <!-- Custom Image Logo (Hidden by default) -->
+                        <img id="customHeaderLogo" src="" alt="Company Logo" class="hidden object-contain" style="height: 105px;">
+
+                        <!-- Vector Logo SVG matching exact Expert logo -->
+                        <div id="defaultLogoSvg" class="flex flex-col items-center">
+                            <svg id="svgLogo" style="height: 105px; width: auto;" viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Building Peak Lines -->
+                                <path d="M20 75 L60 25 L100 75" stroke="#0b3c78" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M50 75 L110 10 L170 75" stroke="#0b3c78" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M120 75 L160 30 L200 75" stroke="#0b3c78" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                
+                                <!-- Inner Window Box Detail -->
+                                <rect x="98" y="32" width="12" height="12" stroke="#0b3c78" stroke-width="3" fill="none"/>
+                                
+                                <!-- Baseline horizontal line -->
+                                <line x1="10" y1="80" x2="210" y2="80" stroke="#0b3c78" stroke-width="3"/>
+                                
+                                <!-- Brand Text EXPERT -->
+                                <text x="110" y="102" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="900" font-size="25" fill="#0b3c78" letter-spacing="3">EXPERT</text>
+                                
+                                <!-- Subtext & decorative lines -->
+                                <line x1="15" y1="112" x2="40" y2="112" stroke="#475569" stroke-width="2"/>
+                                <text x="110" y="115" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="700" font-size="8" fill="#475569" letter-spacing="1.5">MARKETING & DEVELOPERS</text>
+                                <line x1="180" y1="112" x2="205" y2="112" stroke="#475569" stroke-width="2"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- CENTER: Header Company Details -->
+                    <div class="text-center flex-1 space-y-1.5">
+                        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight border-b-2 border-slate-900 inline-block pb-0.5 uppercase">
+                            EXPERT MARKETING AND DEVELOPER'S
+                        </h1>
+                        <p class="text-[11px] sm:text-[12px] text-slate-700 font-medium leading-tight max-w-lg mx-auto">
+                            Abdul Majeed Plaza, Main Chakri Road, Peer Mehar Ali Shah Town, Near Royal Grand Marquee, Rawalpindi.
+                        </p>
+                        <p class="text-[11px] sm:text-[11.5px] font-semibold text-slate-800 pt-0.5">
+                            Mobile # 0300-5551350 &nbsp;|&nbsp; Ph: 051-5575280 &nbsp;|&nbsp; Email: expertbuilders39@gmail.com
+                        </p>
+                    </div>
+
+                    <!-- RIGHT: QR Code with Resizer & Scan text -->
+                    <div class="flex flex-col items-center justify-center min-w-[110px]">
+                        <div id="qrcode" class="p-0.5 border border-slate-300 bg-white"></div>
+                        <span class="text-[9.5px] font-bold text-slate-800 mt-1 uppercase tracking-tight">
+                            Scan to verify
+                        </span>
+                    </div>
+
+                </div>
+
+                <!-- BLUE RECEIPT VOUCHER BANNER BAR -->
+                <div class="my-3 bg-[#0b3c78] text-white text-center py-1.5 font-extrabold text-lg sm:text-xl tracking-widest uppercase shadow-xs">
+                    RECEIPT VOUCHER
+                </div>
+
+                <!-- EXACT PDF GRID TABLE STRUCTURE -->
+                <table class="voucher-table my-3">
+                    <!-- ROW 1: Receipt No, Reg #, Date, Amount -->
+                    <tr>
+                        <td class="lbl w-[11%]">Receipt No</td>
+                        <td class="val w-[18%]" id="displayReceiptNo">RDC-01462</td>
+                        <td class="lbl w-[8%]">Reg #</td>
+                        <td class="val w-[18%]" id="displayRegNo">RDC-1487</td>
+                        <td class="lbl w-[8%]">Date</td>
+                        <td class="val w-[18%]" id="displayDate">05 Apr 2025</td>
+                        <td class="lbl w-[9%]">Amount</td>
+                        <td class="val w-[10%]" id="displayAmount">15,000</td>
+                    </tr>
+
+                    <!-- ROW 2: Received From -->
+                    <tr>
+                        <td class="lbl">Received From</td>
+                        <td colspan="7" class="val font-semibold text-slate-900" id="displayReceivedFrom">Abdul Raheem Khan</td>
+                    </tr>
+
+                    <!-- ROW 3: Amount in Words, Current Balance, Payment Type, Previous Balance -->
+                    <tr>
+                        <td class="lbl leading-tight">Amount in<br>Words</td>
+                        <td class="val font-medium leading-tight" id="displayAmountWords">Fifteen Only Thousand<br>only</td>
+                        <td class="lbl leading-tight">Current Balance</td>
+                        <td class="val font-bold" id="displayCurrentBalance">1,385,000</td>
+                        <td class="lbl leading-tight">Payment Type</td>
+                        <td class="val" id="displayPaymentType">Advance</td>
+                        <td class="lbl leading-tight">Previous Balance</td>
+                        <td class="val" id="displayPrevBalance">1,400,000</td>
+                    </tr>
+
+                    <!-- ROW 4: Payment Via, File Details -->
+                    <tr>
+                        <td class="lbl">Payment Via</td>
+                        <td colspan="3" class="val" id="displayPaymentVia">Cash</td>
+                        <td class="lbl">File Details</td>
+                        <td class="val" id="displayFileDetails">File # 1487, Hill View Block Block</td>
+                        <td colspan="2" class="val"></td>
+                    </tr>
+                </table>
+
+                <!-- SUMMARY BAR BELOW TABLE -->
+                <div class="my-5 border-2 border-slate-900 grid grid-cols-2 text-center py-2 font-black text-sm sm:text-base text-slate-900">
+                    <div class="border-r-2 border-slate-900">
+                        Amount Received: &nbsp;<span id="summaryAmountReceived">Rs. 15,000/-</span>
+                    </div>
+                    <div>
+                        Current Balance: &nbsp;<span id="summaryCurrentBalance">Rs. 1,385,000/-</span>
+                    </div>
+                </div>
+
+                <!-- PAID STAMP BOX AREA -->
+                <div class="my-8 flex justify-center">
+                    <div class="border border-slate-400 w-80 h-28 flex items-center justify-center relative">
+                        <span id="statusStamp" class="text-red-600 text-3xl font-black tracking-widest uppercase transform -rotate-12 border-2 border-red-600 px-5 py-1 rounded">
+                            PAID
+                        </span>
+                    </div>
+                </div>
+
+                <!-- SIGNATURE & RECEIVER FOOTER LINES -->
+                <div class="mt-10 flex justify-between items-center text-xs font-bold text-slate-800 px-2">
+                    <div class="flex items-center gap-1">
+                        <span>Received By:</span>
+                        <span class="inline-block border-b border-slate-800 w-48"></span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span>Sign & Seal:</span>
+                        <span class="inline-block border-b border-slate-800 w-48"></span>
+                    </div>
+                </div>
+
+                <!-- FOOTER DISCLAMER -->
+                <div class="mt-10 text-center text-[10px] text-slate-500 italic">
+                    This is a computer-generated document. No signature is required unless otherwise specified.
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Number Formatter Helper
+        function formatNumber(num) {
+            if (isNaN(num) || num === '' || num === null) return '0';
+            return Number(num).toLocaleString('en-US');
+        }
+
+        // Convert Number to PKR Words
+        function numberToWords(num) {
+            if (isNaN(num) || num <= 0) return 'Zero Only';
+            
+            const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 
+                       'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+            function inWords(n) {
+                if ((n = n.toString()).length > 9) return 'overflow';
+                let n_array = ('000000000' + n).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+                if (!n_array) return ''; 
+                let str = '';
+                str += (n_array[1] != 0) ? (a[Number(n_array[1])] || b[n_array[1][0]] + ' ' + a[n_array[1][1]]) + ' Crore ' : '';
+                str += (n_array[2] != 0) ? (a[Number(n_array[2])] || b[n_array[2][0]] + ' ' + a[n_array[2][1]]) + ' Lakh ' : '';
+                str += (n_array[3] != 0) ? (a[Number(n_array[3])] || b[n_array[3][0]] + ' ' + a[n_array[3][1]]) + ' Thousand ' : '';
+                str += (n_array[4] != 0) ? (a[Number(n_array[4])] || b[n_array[4][0]] + ' ' + a[n_array[4][1]]) + ' Hundred ' : '';
+                str += (n_array[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n_array[5])] || b[n_array[5][0]] + ' ' + a[n_array[5][1]]) + ' ' : '';
+                return str.trim();
+            }
+
+            let word = inWords(num);
+            return word ? word + ' Only' : 'Zero Only';
+        }
+
+        // Custom QR Code Generator with Size Resizer
+        let qrCodeObj = null;
+
+        function updateQRCode() {
+            const qrContainer = document.getElementById("qrcode");
+            qrContainer.innerHTML = "";
+
+            const receiptNo = document.getElementById('inputReceiptNo').value || 'RDC-01462';
+            const regNo = document.getElementById('inputRegNo').value || 'RDC-1487';
+            const amountVal = document.getElementById('inputAmount').value || '15000';
+            const qrSize = parseInt(document.getElementById('inputQrSize').value) || 105;
+
+            const qrText = `EXPERT MARKETING & DEVELOPERS\nReceipt No: ${receiptNo}\nReg No: ${regNo}\nAmount: PKR ${amountVal}`;
+
+            qrCodeObj = new QRCode(qrContainer, {
+                text: qrText,
+                width: qrSize,
+                height: qrSize,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        // Main Sync Function to update UI from form controls
+        function syncVoucher() {
+            const receiptNo = document.getElementById('inputReceiptNo').value || 'RDC-01462';
+            const regNo = document.getElementById('inputRegNo').value || 'RDC-1487';
+            const dateVal = document.getElementById('inputDate').value || '05 Apr 2025';
+            const receivedFrom = document.getElementById('inputReceivedFrom').value || 'Abdul Raheem Khan';
+            
+            const amountVal = parseFloat(document.getElementById('inputAmount').value) || 0;
+            const prevBalanceVal = parseFloat(document.getElementById('inputPrevBalance').value) || 0;
+            const currentBalanceVal = prevBalanceVal - amountVal;
+
+            const amountWords = document.getElementById('inputAmountWords').value || 'Fifteen Only Thousand only';
+            const paymentType = document.getElementById('inputPaymentType').value || 'Advance';
+            const paymentVia = document.getElementById('inputPaymentVia').value || 'Cash';
+            const fileDetails = document.getElementById('inputFileDetails').value || 'File # 1487, Hill View Block Block';
+            const statusText = document.getElementById('inputStatusText').value || 'PAID';
+
+            // Sync Text to Document
+            document.getElementById('displayReceiptNo').innerText = receiptNo;
+            document.getElementById('displayRegNo').innerText = regNo;
+            document.getElementById('displayDate').innerText = dateVal;
+            document.getElementById('displayReceivedFrom').innerText = receivedFrom;
+            document.getElementById('displayAmount').innerText = formatNumber(amountVal);
+            document.getElementById('displayAmountWords').innerHTML = amountWords;
+            document.getElementById('displayPaymentType').innerText = paymentType;
+            document.getElementById('displayPaymentVia').innerText = paymentVia;
+            document.getElementById('displayPrevBalance').innerText = formatNumber(prevBalanceVal);
+            document.getElementById('displayCurrentBalance').innerText = formatNumber(currentBalanceVal);
+            document.getElementById('displayFileDetails').innerText = fileDetails;
+
+            // Sync Summary Bar
+            document.getElementById('summaryAmountReceived').innerText = `Rs. ${formatNumber(amountVal)}/-`;
+            document.getElementById('summaryCurrentBalance').innerText = `Rs. ${formatNumber(currentBalanceVal)}/-`;
+
+            // Status Stamp
+            const statusStamp = document.getElementById('statusStamp');
+            statusStamp.innerText = statusText;
+            if(!statusText.trim()) {
+                statusStamp.parentElement.style.display = 'none';
+            } else {
+                statusStamp.parentElement.style.display = 'flex';
+            }
+
+            // Sync QR Code
+            updateQRCode();
+        }
+
+        // Custom Logo File Upload Handler
+        document.getElementById('inputLogoFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const customImg = document.getElementById('customHeaderLogo');
+                    const defaultSvg = document.getElementById('defaultLogoSvg');
+
+                    customImg.src = evt.target.result;
+                    customImg.classList.remove('hidden');
+                    defaultSvg.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Logo Height Slider Control
+        document.getElementById('inputLogoHeight').addEventListener('input', function(e) {
+            const height = e.target.value;
+            document.getElementById('valLogoHeight').innerText = height;
+            
+            const customImg = document.getElementById('customHeaderLogo');
+            const svgLogo = document.getElementById('svgLogo');
+
+            customImg.style.height = `${height}px`;
+            if (svgLogo) {
+                svgLogo.style.height = `${height}px`;
+            }
+        });
+
+        // QR Code Size Slider Control
+        document.getElementById('inputQrSize').addEventListener('input', function(e) {
+            const size = e.target.value;
+            document.getElementById('valQrSize').innerText = size;
+            updateQRCode();
+        });
+
+        // Clear custom uploaded logo
+        function removeCustomLogo() {
+            document.getElementById('inputLogoFile').value = '';
+            const customImg = document.getElementById('customHeaderLogo');
+            const defaultSvg = document.getElementById('defaultLogoSvg');
+
+            customImg.classList.add('hidden');
+            customImg.src = '';
+            defaultSvg.classList.remove('hidden');
+        }
+
+        // Auto convert Amount to Words on input
+        document.getElementById('inputAmount').addEventListener('input', function(e) {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val) && val >= 0) {
+                document.getElementById('inputAmountWords').innerText = numberToWords(val);
+            }
+        });
+
+        // Toggle Sidebar Controls
+        function toggleEditor() {
+            const panel = document.getElementById('editorPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        // Reset to exact default PDF document state
+        function resetDefaults() {
+            document.getElementById('inputReceiptNo').value = "RDC-01462";
+            document.getElementById('inputRegNo').value = "RDC-1487";
+            document.getElementById('inputDate').value = "05 Apr 2025";
+            document.getElementById('inputReceivedFrom').value = "Abdul Raheem Khan";
+            document.getElementById('inputAmount').value = "15000";
+            document.getElementById('inputPrevBalance').value = "1400000";
+            document.getElementById('inputAmountWords').value = "Fifteen Only Thousand\nonly";
+            document.getElementById('inputPaymentType').value = "Advance";
+            document.getElementById('inputPaymentVia').value = "Cash";
+            document.getElementById('inputFileDetails').value = "File # 1487, Hill View Block Block";
+            document.getElementById('inputStatusText').value = "PAID";
+            document.getElementById('inputLogoHeight').value = "105";
+            document.getElementById('inputQrSize').value = "105";
+            document.getElementById('valLogoHeight').innerText = "105";
+            document.getElementById('valQrSize').innerText = "105";
+            
+            const svgLogo = document.getElementById('svgLogo');
+            if(svgLogo) svgLogo.style.height = "105px";
+
+            removeCustomLogo();
+            syncVoucher();
+        }
+
+        // Initial setup on window load
+        window.onload = function() {
+            const inputs = document.querySelectorAll('#editorPanel input');
+            inputs.forEach(input => {
+                input.addEventListener('input', syncVoucher);
+            });
+            syncVoucher();
+        };
+    </script>
+</body>
+</html>

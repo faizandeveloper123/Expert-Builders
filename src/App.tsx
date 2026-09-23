@@ -195,7 +195,7 @@ function App() {
     : route.name === 'automation'
     ? 'Automation'
     : route.name === 'invoices'
-    ? 'Invoices'
+    ? 'Receipt Voucher'
     : route.name === 'account-statements'
     ? 'Account Statement'
     : route.name === 'dealership-portal'
@@ -246,7 +246,7 @@ function App() {
         navigate({ name: 'automation' });
         return;
       }
-      if (label === 'Invoices') {
+      if (label === 'Invoices' || label === 'Receipt Voucher') {
         navigate({ name: 'invoices' });
         return;
       }
