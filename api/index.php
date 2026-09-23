@@ -3250,6 +3250,87 @@ function sync_all_account_statements(): void
     }
 }
 
+/**
+ * Ensure an account statement exists for a receipt's member, creating one
+ * automatically when the member comes from a Receipt Voucher for the first
+ * time. Returns the statement id (0 when there is no member to attach to).
+ */
+function ensure_statement_for_receipt(array $c, ?int $createdBy, int $receiptId = 0): int
+{
+    ensure_account_statements_table();
+    $member = trim((string)($c['received_from'] ?? ''));
+    $reg = trim((string)($c['reg_no'] ?? ''));
+    if ($member === '' && $reg === '') return 0;
+
+    // Try to match an existing statement by registration no / file no / name.
+    $sid = 0;
+    if ($reg !== '') {
+        $q = db()->prepare(
+            'SELECT id FROM account_statements
+              WHERE registration_no = :a OR file_no = :a
+                 OR registration_no LIKE :b OR file_no LIKE :b
+              ORDER BY id DESC LIMIT 1'
+        );
+        $q->execute([':a' => $reg, ':b' => '%' . $reg . '%']);
+        $sid = (int)$q->fetchColumn();
+    }
+    if ($sid === 0 && $member !== '') {
+        $q = db()->prepare(
+            'SELECT id FROM account_statements WHERE LOWER(member_name) = LOWER(:m)
+              ORDER BY id DESC LIMIT 1'
+        );
+        $q->execute([':m' => $member]);
+        $sid = (int)$q->fetchColumn();
+    }
+
+    $createdNew = $sid === 0;
+
+    if ($createdNew) {
+        // No statement yet — create one from the receipt voucher's member.
+        $fileNo = $reg !== ''
+            ? $reg
+            : (preg_match('/File\s*#?\s*([0-9]+)/i', (string)($c['file_details'] ?? ''), $m) ? $m[1] : '');
+        db()->prepare(
+            'INSERT INTO account_statements (registration_no, member_name, file_no, file_status, created_by)
+             VALUES (:reg, :member, :file_no, "Active", :cb)'
+        )->execute([
+            ':reg' => $reg,
+            ':member' => $member !== '' ? $member : 'Member ' . $reg,
+            ':file_no' => $fileNo,
+            ':cb' => $createdBy,
+        ]);
+        $sid = (int)db()->lastInsertId();
+    } else {
+        $sid = (int)$sid;
+    }
+
+    // Seed a ledger row for this receipt when the statement has no rows yet,
+    // so the receipt amount still shows inside the statement while a proper
+    // schedule hasn't been generated.
+    if ($receiptId > 0) {
+        $rowCount = db()->prepare('SELECT COUNT(*) FROM account_statement_rows WHERE statement_id = :sid');
+        $rowCount->execute([':sid' => $sid]);
+        if ((int)$rowCount->fetchColumn() === 0) {
+            $amt = (float)$c['amount'];
+            $dated = (string)($c['dated'] ?? '');
+            db()->prepare(
+                'INSERT INTO account_statement_rows
+                    (statement_id, seq, description, inst_no, due_date, due_amount, paid_amount, paid_date, outstanding, receipt_id)
+                 VALUES (:sid, 1, :desc, :inst, :ddate, :due, :due, :pdate, 0, :rid)'
+            )->execute([
+                ':sid' => $sid,
+                ':desc' => 'Payment received - ' . (string)($c['receipt_no'] ?? ''),
+                ':inst' => (string)($c['receipt_no'] ?? ''),
+                ':ddate' => $dated,
+                ':due' => $amt,
+                ':pdate' => $dated,
+                ':rid' => $receiptId,
+            ]);
+        }
+    }
+    return $sid;
+}
+
 /** POST /receipts — save a new receipt voucher (auto-updates account statements). */
 function create_receipt(array $body): void
 {
@@ -3285,6 +3366,7 @@ function create_receipt(array $body): void
         ':created_by' => $createdBy,
     ]);
     $id = (int)db()->lastInsertId();
+    ensure_statement_for_receipt($c, $createdBy, $id);
     sync_all_account_statements();
 
     $get = db()->prepare('SELECT * FROM receipts WHERE id = :id');
@@ -3296,9 +3378,10 @@ function create_receipt(array $body): void
 function update_receipt(int $id, array $body): void
 {
     ensure_receipts_table();
-    $existing = db()->prepare('SELECT id FROM receipts WHERE id = :id');
+    $existing = db()->prepare('SELECT id, created_by FROM receipts WHERE id = :id');
     $existing->execute([':id' => $id]);
-    if ($existing->fetchColumn() === false) fail('Receipt not found', 404);
+    $existingRow = $existing->fetch();
+    if ($existingRow === false) fail('Receipt not found', 404);
 
     $c = receipt_columns($body);
     if ($c['receipt_no'] === '') fail('Receipt number is required');
@@ -3328,6 +3411,8 @@ function update_receipt(int $id, array $body): void
         ':fdet' => $c['file_details'],
         ':id' => $id,
     ]);
+    $createdBy = isset($existingRow['created_by']) && $existingRow['created_by'] !== null ? (int)$existingRow['created_by'] : null;
+    ensure_statement_for_receipt($c, $createdBy, $id);
     sync_all_account_statements();
 
     $get = db()->prepare('SELECT * FROM receipts WHERE id = :id');

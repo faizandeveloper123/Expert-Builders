@@ -9,7 +9,7 @@ import {
   FaRotateRight,
   FaListOl,
 } from 'react-icons/fa6';
-import { api, type ApiAccountStatement, type ApiStatementRow, type StatementRowInput } from '../api';
+import { api, type ApiAccountStatement, type ApiReceipt, type ApiStatementRow, type StatementRowInput } from '../api';
 import { useAuth } from '../auth';
 import BrandLogo from './BrandLogo';
 
@@ -170,6 +170,8 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
   const [newName, setNewName] = useState('');
   const [newFile, setNewFile] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [receiptMembers, setReceiptMembers] = useState<ApiReceipt[]>([]);
   const [saving, setSaving] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
 
@@ -257,6 +259,48 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
     } finally {
       setCreating(false);
     }
+  };
+
+  /** Pull members straight from the saved Receipt Vouchers (auto-fetch). */
+  const loadReceiptMembers = async () => {
+    setImporting(true);
+    try {
+      const res = await api.listReceipts({});
+      setReceiptMembers(res.data);
+    } catch (err) {
+      onNotify(`Could not load receipt members: ${(err as Error).message}`);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  /** Names that already have a statement (case-insensitive). */
+  const existingNames = useMemo(
+    () => new Set(statements.map((s) => s.member_name.trim().toLowerCase())),
+    [statements]
+  );
+
+  /** Distinct receipt customers who don't yet have a statement. */
+  const pendingReceiptMembers = useMemo(() => {
+    const seen = new Map<string, ApiReceipt>();
+    for (const r of receiptMembers) {
+      const name = (r.received_from ?? '').trim();
+      if (!name) continue;
+      if (existingNames.has(name.toLowerCase())) continue;
+      const key = name.toLowerCase();
+      const cur = seen.get(key);
+      if (!cur || (cur.receipt_no ?? '') < (r.receipt_no ?? '')) seen.set(key, r);
+    }
+    return Array.from(seen.values());
+  }, [receiptMembers, existingNames]);
+
+  /** Prefill the create form from a receipt + optionally create immediately. */
+  const handleImportFromReceipt = async (r: ApiReceipt) => {
+    const name = (r.received_from ?? '').trim();
+    if (!name) return;
+    setNewName(name);
+    setNewFile((r.reg_no ?? '').trim() || '');
+    await handleNew();
   };
 
   const handleSave = async () => {
@@ -474,7 +518,10 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
 
               <button
                 type="button"
-                onClick={() => setShowCreate((v) => !v)}
+                onClick={() => {
+                  setShowCreate((v) => !v);
+                  if (!showCreate) void loadReceiptMembers();
+                }}
                 className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-brand-blue hover:bg-brand-dark text-white text-xs font-bold rounded-lg shadow-sm shadow-brand-blue/40 transition active:scale-[0.98]"
               >
                 <FaPlus className="text-[10px]" /> New Member
@@ -534,7 +581,8 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
 
           {/* New member quick-create */}
           {showCreate && (
-            <div className="mb-5 bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-end gap-3">
+            <>
+              <div className="mb-5 bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-end gap-3">
               <label className="flex flex-col gap-1 text-[11px] font-bold text-slate-600">
                 Member Name *
                 <input
@@ -572,6 +620,52 @@ export default function AccountStatementPage({ onNotify }: AccountStatementPageP
                 Cancel
               </button>
             </div>
+
+            {/* Import members straight from Recеipt Vouchers */}
+            <div className="mb-5 bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <FaListOl className="text-[#0a529c]" /> Import from Receipt Vouchers
+                </h3>
+                {importing && (
+                  <span className="text-[10px] text-slate-400 animate-pulse">Loading receipts...</span>
+                )}
+              </div>
+              {pendingReceiptMembers.length === 0 ? (
+                <p className="text-xs text-slate-500">
+                  {importing
+                    ? 'Fetching receipt members…'
+                    : 'No receipt customers are waiting. Members already have statements, or no receipts have been saved yet.'}
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {pendingReceiptMembers.slice(0, 12).map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between gap-2 border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 hover:bg-white transition"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-800 truncate">
+                          {(r.received_from ?? '').trim()}
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate">
+                          {(r.reg_no || 'no reg').trim()} · {fmtMoney(r.amount ?? 0)}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleImportFromReceipt(r)}
+                        disabled={creating}
+                        className="shrink-0 h-7 px-3 rounded-md bg-[#0a529c] hover:bg-[#004b93] text-white text-[10px] font-bold transition disabled:opacity-50"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            </>
           )}
 
           <div className="space-y-4">

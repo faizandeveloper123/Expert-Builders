@@ -8,6 +8,7 @@ dist
 Evee.rar
 dev-server.log
 api/mail_secrets.php
+api/_crash.log
 *.apk
 android/
 .htaccess_test/
