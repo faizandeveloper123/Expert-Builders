@@ -13,6 +13,7 @@ import SearchableSelect from './SearchableSelect';
 import {
   FaAngleDown,
   FaArrowLeft,
+  FaCheck,
   FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
@@ -73,6 +74,7 @@ interface ContactInfoPanelProps {
   onNotify: (msg: string) => void;
   onOpenDrawer: (panel: string) => void;
   onAvatarUpdated?: (data: string) => void;
+  onSaved?: (updates: Partial<ApiContact>) => void;
   position?: { current: number; total: number };
   onNavigate?: (dir: 'prev' | 'next') => void;
   className?: string;
@@ -125,7 +127,7 @@ function Accordion({
   );
 }
 
-function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpdated, position, onNavigate, className }: ContactInfoPanelProps) {
+function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpdated, onSaved, position, onNavigate, className }: ContactInfoPanelProps) {
   const [subtab, setSubtab] = useState<SubTab>('all');
   const [fieldSearch, setFieldSearch] = useState('');
   const [ownerOpen, setOwnerOpen] = useState(false);
@@ -281,20 +283,23 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
     onNotify(`DND ${!dndChannels[key] ? 'enabled' : 'disabled'} for ${label}`);
   };
 
-  const [fields, setFields] = useState({
-    first: contact.first_name || '',
-    last: contact.last_name || '',
-    dob: '',
-    gender: 'Female',
-    address: '',
-    city: '',
-    postal: '',
-    language: '',
-    timezone: '',
-    source: '',
-    contactType: contact.contact_type || '',
-    business: contact.business_name || '',
-    website: '',
+  const [fields, setFields] = useState(() => {
+    const cf = contact.custom_fields ?? {};
+    return {
+      first: contact.first_name || '',
+      last: contact.last_name || '',
+      dob: (cf['dob'] as string) || '',
+      gender: (cf['gender'] as string) || 'Female',
+      address: (cf['address'] as string) || '',
+      city: (cf['city'] as string) || '',
+      postal: (cf['postal_code'] as string) || '',
+      language: (cf['language'] as string) || '',
+      timezone: (cf['timezone'] as string) || '',
+      source: (cf['source'] as string) || '',
+      contactType: contact.contact_type || '',
+      business: contact.business_name || '',
+      website: (cf['website'] as string) || '',
+    };
   });
 
   const [emails, setEmails] = useState<{ id: number; value: string }[]>([
@@ -304,6 +309,32 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
     { id: 1, type: 'Mobile', dialCode: '+92', value: contact.phone || '' },
   ]);
   const idCounter = useRef(2);
+  const [saving, setSaving] = useState(false);
+
+  // Re-sync editable fields when navigating to a different contact
+  // (keyed on the id only, so avatar uploads don't wipe in-progress edits).
+  useEffect(() => {
+    const cf = contact.custom_fields ?? {};
+    setFields({
+      first: contact.first_name || '',
+      last: contact.last_name || '',
+      dob: (cf['dob'] as string) || '',
+      gender: (cf['gender'] as string) || 'Female',
+      address: (cf['address'] as string) || '',
+      city: (cf['city'] as string) || '',
+      postal: (cf['postal_code'] as string) || '',
+      language: (cf['language'] as string) || '',
+      timezone: (cf['timezone'] as string) || '',
+      source: (cf['source'] as string) || '',
+      contactType: contact.contact_type || '',
+      business: contact.business_name || '',
+      website: (cf['website'] as string) || '',
+    });
+    setEmails([{ id: 1, value: contact.email || '' }]);
+    setPhones([{ id: 1, type: 'Mobile', dialCode: '+92', value: contact.phone || '' }]);
+    idCounter.current = 2;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contact.id]);
 
   const [tags, setTags] = useState<string[]>(contact.tags ?? []);
   const [addingTag, setAddingTag] = useState(false);
@@ -357,6 +388,42 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
   const copy = (text: string) => {
     navigator.clipboard?.writeText(text).catch(() => undefined);
     onNotify(`Copied "${text}" to clipboard!`);
+  };
+
+  const persistFields = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const email = emails.map((r) => r.value.trim()).find(Boolean) ?? '';
+      const phone = phones.map((r) => r.value.trim()).find(Boolean) ?? '';
+      const cf = { ...(contact.custom_fields ?? {}) };
+      cf['dob'] = fields.dob;
+      cf['gender'] = fields.gender;
+      cf['address'] = fields.address;
+      cf['city'] = fields.city;
+      cf['postal_code'] = fields.postal;
+      cf['language'] = fields.language;
+      cf['timezone'] = fields.timezone;
+      cf['source'] = fields.source;
+      cf['website'] = fields.website;
+
+      const updates = {
+        first_name: fields.first,
+        last_name: fields.last,
+        phone,
+        email,
+        business_name: fields.business,
+        contact_type: fields.contactType,
+        custom_fields: cf,
+      };
+      await api.updateContact(contact.id, updates);
+      onNotify('Contact details saved');
+      onSaved?.({ ...updates, id: contact.id });
+    } catch (err) {
+      onNotify(`Save failed: ${(err as Error).message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const initials = initialsFromName(contact.name);
@@ -941,6 +1008,19 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
           </div>
         )}
       </div>
+
+      {subtab === 'all' && (
+        <div className="px-3 py-2 border-t border-slate-200 bg-white flex-shrink-0">
+          <button
+            onClick={() => void persistFields()}
+            disabled={saving}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-lg transition shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaCheck className="text-xs" />
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

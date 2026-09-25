@@ -735,6 +735,17 @@ function delete_appointment(int $id): void
     respond(['message' => 'Appointment deleted']);
 }
 
+/** List every appointment (used by the Sites analytics tab to count test-ride bookings). */
+function list_all_appointments(): void
+{
+    $rows = db()->query(
+        'SELECT id, contact_id, title, calendar, host, date, start_time, end_time,
+                location, status, notes, category, created_at
+           FROM appointments ORDER BY created_at DESC'
+    )->fetchAll();
+    respond(['data' => $rows, 'count' => count($rows)]);
+}
+
 /** Max size (bytes) accepted for a single uploaded document. */
 const DOCUMENT_MAX_BYTES = 10485760; // 10 MB
 
@@ -3267,11 +3278,11 @@ function ensure_statement_for_receipt(array $c, ?int $createdBy, int $receiptId 
     if ($reg !== '') {
         $q = db()->prepare(
             'SELECT id FROM account_statements
-              WHERE registration_no = :a OR file_no = :a
-                 OR registration_no LIKE :b OR file_no LIKE :b
+              WHERE registration_no = :a1 OR file_no = :a1
+                 OR registration_no LIKE :b1 OR file_no LIKE :b1
               ORDER BY id DESC LIMIT 1'
         );
-        $q->execute([':a' => $reg, ':b' => '%' . $reg . '%']);
+        $q->execute([':a1' => $reg, ':b1' => '%' . $reg . '%']);
         $sid = (int)$q->fetchColumn();
     }
     if ($sid === 0 && $member !== '') {
@@ -3316,13 +3327,14 @@ function ensure_statement_for_receipt(array $c, ?int $createdBy, int $receiptId 
             db()->prepare(
                 'INSERT INTO account_statement_rows
                     (statement_id, seq, description, inst_no, due_date, due_amount, paid_amount, paid_date, outstanding, receipt_id)
-                 VALUES (:sid, 1, :desc, :inst, :ddate, :due, :due, :pdate, 0, :rid)'
+                 VALUES (:sid, 1, :desc, :inst, :ddate, :due_amt, :paid_amt, :pdate, 0, :rid)'
             )->execute([
                 ':sid' => $sid,
                 ':desc' => 'Payment received - ' . (string)($c['receipt_no'] ?? ''),
                 ':inst' => (string)($c['receipt_no'] ?? ''),
                 ':ddate' => $dated,
-                ':due' => $amt,
+                ':due_amt' => $amt,
+                ':paid_amt' => $amt,
                 ':pdate' => $dated,
                 ':rid' => $receiptId,
             ]);
@@ -4435,6 +4447,9 @@ switch ($resource) {
         break;
 
     case 'appointments':
+        if ($method === 'GET') {
+            list_all_appointments();
+        }
         if ($method === 'DELETE') {
             $id = $parts[1] ?? null;
             if (!$id) fail('Appointment id required');

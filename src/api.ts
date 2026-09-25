@@ -716,6 +716,9 @@ export const api = {
       body: JSON.stringify({ ids }),
     }),
 
+  restoreContact: (id: number) =>
+    request<{ message: string }>(`/maintenance/restore-contact/${id}`, { method: 'POST' }),
+
   listOpportunities: (contactId: number) =>
     request<{ data: Opportunity[]; count: number }>(`/contacts/${contactId}/opportunities`),
 
@@ -763,6 +766,9 @@ export const api = {
 
   deleteAppointment: (id: number) =>
     request<{ message: string }>(`/appointments/${id}`, { method: 'DELETE' }),
+
+  listAllAppointments: () =>
+    request<{ data: Appointment[]; count: number }>('/appointments'),
 
   listDocuments: (contactId: number) =>
     request<{ data: ContactDocument[]; count: number }>(`/contacts/${contactId}/documents`),

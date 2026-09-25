@@ -48,9 +48,20 @@ import { logBulkAction } from './data/bulkActionsStore';
 import { registerImportColumns } from './data/importColumnsStore';
 import ImportWizard from './components/ImportWizard';
 import Toast from './components/Toast';
+import ConfirmDialog from './components/ConfirmDialog';
 import { StaffProvider } from './StaffContext';
 
 type ViewMode = string;
+
+type DeleteConfirm =
+  | { kind: 'single'; contact: Contact }
+  | { kind: 'bulk'; ids: number[]; contactsToDelete: Contact[] }
+  | null;
+
+interface UndoToast {
+  message: string;
+  onUndo: () => void;
+}
 
 const SMART_LIST_STORAGE_KEY = 'evee_smart_lists_v2';
 const smartListStorageKey = (id?: number | null) =>
@@ -180,6 +191,9 @@ function App() {
   const [importOpen, setImportOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirm>(null);
+  const [undoToast, setUndoToast] = useState<UndoToast | null>(null);
+  const undoTimer = useRef<number | undefined>(undefined);
   const searchTimer = useRef<number | undefined>(undefined);
 
   // Keep the current page in the URL hash so a refresh stays on the same page.
@@ -208,6 +222,12 @@ function App() {
     setToast(msg);
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const showUndoToast = useCallback((message: string, onUndo: () => void) => {
+    setUndoToast({ message, onUndo });
+    window.clearTimeout(undoTimer.current);
+    undoTimer.current = window.setTimeout(() => setUndoToast(null), 10000);
   }, []);
 
   const handleSelectTab = useCallback(
@@ -342,16 +362,39 @@ setLoading(true);
   const deleteSelected = async () => {
     const ids = [...selectedIds];
     if (ids.length === 0) return;
+    const contactsToDelete = contacts.filter((c) => ids.includes(c.id));
+    setDeleteConfirm({ kind: 'bulk', ids, contactsToDelete });
+  };
+
+  const confirmDeleteSelected = async (ids: number[], contactsToDelete: Contact[]) => {
+    setDeleteConfirm(null);
     logBulkAction({ label: `Delete ${ids.length} contact(s)`, operation: 'Delete' });
     try {
       await api.bulkDelete(ids);
-      setContacts((prev) => prev.filter((c) => !selectedIds.has(c.id)));
+      setContacts((prev) => prev.filter((c) => !ids.includes(c.id)));
       setSelectedIds(new Set());
-      showToast(`Deleted ${ids.length} contact(s)`);
+      showUndoToast(`Deleted ${ids.length} contact(s)`, () => {
+        void restoreContacts(contactsToDelete);
+      });
       logActivity({ type: 'delete', title: 'Contacts deleted', detail: `${ids.length} contact(s)` });
       void refreshServerLists();
     } catch (err) {
       showToast(`Delete failed: ${(err as Error).message}`);
+    }
+  };
+
+  const restoreContacts = async (restored: Contact[]) => {
+    try {
+      for (const c of restored) await api.restoreContact(c.id);
+      setUndoToast(null);
+      setContacts((prev) => {
+        const existing = new Set(prev.map((c) => c.id));
+        return [...restored.filter((c) => !existing.has(c.id)), ...prev];
+      });
+      showToast(`Restored ${restored.length} contact(s)`);
+      void refreshServerLists();
+    } catch (err) {
+      showToast(`Restore failed: ${(err as Error).message}`);
     }
   };
 
@@ -868,7 +911,12 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
     navigate({ name: 'contact', id: sortedContacts[next].id });
   };
 
-  const deleteContactRow = async (contact: Contact) => {
+  const deleteContactRow = (contact: Contact) => {
+    setDeleteConfirm({ kind: 'single', contact });
+  };
+
+  const confirmDeleteContact = async (contact: Contact) => {
+    setDeleteConfirm(null);
     try {
       await api.deleteContact(contact.id);
       setContacts((prev) => prev.filter((c) => c.id !== contact.id));
@@ -877,7 +925,9 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
         next.delete(contact.id);
         return next;
       });
-      showToast(`Contact "${contact.name}" deleted`);
+      showUndoToast(`Contact "${contact.name}" deleted`, () => {
+        void restoreContacts([contact]);
+      });
       logActivity({ type: 'delete', title: 'Contact deleted', detail: contact.name });
       void refreshServerLists();
     } catch (err) {
@@ -1636,10 +1686,35 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
             onCheckProgress={checkProgress}
             onClose={dismissSuccess}
           />
+
+          <ConfirmDialog
+            open={deleteConfirm !== null}
+            title={
+              deleteConfirm?.kind === 'bulk' ? 'Delete selected contacts' : 'Delete contact'
+            }
+            message={
+              deleteConfirm?.kind === 'bulk'
+                ? `Are you sure you want to delete ${deleteConfirm.ids.length} contact(s)? You will have 10 seconds to undo after deletion.`
+                : `Are you sure you want to delete "${deleteConfirm?.contact.name}"? You will have 10 seconds to undo after deletion.`
+            }
+            confirmLabel="Yes, Delete"
+            onConfirm={() => {
+              if (deleteConfirm?.kind === 'single') {
+                void confirmDeleteContact(deleteConfirm.contact);
+              } else if (deleteConfirm?.kind === 'bulk') {
+                void confirmDeleteSelected(deleteConfirm.ids, deleteConfirm.contactsToDelete);
+              }
+            }}
+            onCancel={() => setDeleteConfirm(null)}
+          />
         </div>
       )}
 
-      <Toast message={toast} />
+      <Toast
+        message={undoToast ? undoToast.message : toast}
+        actionLabel={undoToast ? 'Undo' : undefined}
+        onAction={undoToast?.onUndo}
+      />
     </StaffProvider>
   );
 }

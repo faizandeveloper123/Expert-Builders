@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { logActivity } from '../data/activityLog';
 import { useCampaigns } from '../data/campaigns';
-import { api } from '../api';
+import { api, type Appointment } from '../api';
 import { useForms, type StoredForm } from '../data/formsStore';
 import {
   fileToDataUrl,
@@ -36,6 +36,7 @@ import {
   FaBullhorn,
   FaCalendarCheck,
   FaCaretDown,
+  FaCarSide,
   FaChartLine,
   FaChevronDown,
   FaCircleCheck,
@@ -98,6 +99,7 @@ import {
   FaShareNodes,
   FaSliders,
   FaStarHalfStroke,
+  FaUserPlus,
   FaWandMagicSparkles,
   FaWhatsapp,
   FaWindowMaximize,
@@ -415,7 +417,8 @@ function formatDate(d: Date) {
   );
 }
 
-type MetricKey = 'views' | 'responses' | 'avgTime' | 'completion';
+type MetricKey = 'testDrives' | 'responses' | 'leads' | 'forms';
+type AnalyticsPeriod = 'week' | 'month' | 'year';
 
 interface MetricDef {
   key: MetricKey;
@@ -424,33 +427,13 @@ interface MetricDef {
   format: (v: number) => string;
 }
 
-interface DailyPoint {
-  label: string;
-  value: number;
-}
-
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const SERIES_BASE: Record<MetricKey, number[]> = {
-  views: [64, 78, 55, 90, 82, 95, 70],
-  responses: [18, 26, 14, 33, 29, 41, 24],
-  avgTime: [11, 9, 13, 10, 12, 8, 11],
-  completion: [58, 72, 61, 80, 74, 86, 68],
-};
-
-function formatSeconds(s: number) {
-  const m = Math.floor(s / 60)
-    .toString()
-    .padStart(2, '0');
-  const sec = (s % 60).toString().padStart(2, '0');
-  return `${m}:${sec}`;
-}
-
 const METRICS: MetricDef[] = [
-  { key: 'views', label: 'Views', icon: <FaRegEye />, format: (v) => v.toLocaleString() },
+  { key: 'testDrives', label: 'Test Drives', icon: <FaCarSide />, format: (v) => v.toLocaleString() },
   { key: 'responses', label: 'Responses', icon: <FaCircleCheck />, format: (v) => v.toLocaleString() },
-  { key: 'avgTime', label: 'Average Time', icon: <FaRegClock />, format: formatSeconds },
-  { key: 'completion', label: 'Completion Rate', icon: <FaStarHalfStroke />, format: (v) => `${v}%` },
+  { key: 'leads', label: 'New Leads', icon: <FaUserPlus />, format: (v) => v.toLocaleString() },
+  { key: 'forms', label: 'Forms Used', icon: <FaRegCalendarDays />, format: (v) => v.toLocaleString() },
 ];
 
 function useCountUp(target: number, duration = 700) {
@@ -529,45 +512,146 @@ const AUTO_DEALER_TEMPLATE: FormElement[] = [
   withGeneralSettings({ id: 8, label: 'Contact Us Today', type: 'button', placeholder: 'Contact Us Today', required: false, buttonColor: '#2563EB', buttonTextColor: '#FFFFFF' }),
 ];
 
-function buildAnalytics(forms: Form[], mode: 'all' | number = 'all') {
-  const targets = mode === 'all' ? forms : forms.filter((f) => f.id === mode);
-  const totalResponses = targets.reduce((acc, f) => acc + f.submissions.length, 0);
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
 
-  const respPattern = SERIES_BASE.responses;
-  const respSum = respPattern.reduce((a, b) => a + b, 0) || 1;
-  const scaledResp = respPattern.map((v) =>
-    totalResponses === 0 ? 0 : Math.round((v / respSum) * totalResponses)
+function isoDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Normalize the stored "YYYY-MM-DD" / "YYYY-MM-DD HH:MM:SS" / ISO timestamp into a Date. */
+function parseStamp(t: string): Date | null {
+  const value = String(t ?? '').trim();
+  if (!value) return null;
+  // Date-only value -> local midnight (avoids UTC timezone drift).
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  }
+  const d = new Date(value.replace(' ', 'T'));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function isTestDriveSubmission(sub: SubmissionRow): boolean {
+  if (/test\s*(drive|ride)/i.test(sub.formName)) return true;
+  return Object.values(sub.values ?? {}).some(
+    (v) => typeof v === 'string' && /test\s*(drive|ride)/i.test(v)
   );
+}
 
-  const completionPattern = SERIES_BASE.completion;
-  const viewsArr = scaledResp.map((r, i) =>
-    r === 0 ? 0 : Math.round((r / completionPattern[i]) * 100)
+function isTestRideAppointment(a: Appointment): boolean {
+  return (
+    /test\s*(drive|ride)/i.test(String(a.title ?? '')) ||
+    /test\s*ride/i.test(String(a.calendar ?? '')) ||
+    /test\s*(drive|ride)/i.test(String(a.notes ?? ''))
   );
-  const completionArr = scaledResp.map((r, i) =>
-    viewsArr[i] === 0 ? 0 : Math.round((r / viewsArr[i]) * 100)
-  );
+}
 
-  const toDaily = (arr: number[]): DailyPoint[] =>
-    arr.map((value, i) => ({ label: DAY_LABELS[i], value }));
+interface AnalyticsBucketRange {
+  key: string;
+  start: Date;
+  end: Date;
+  label: string;
+}
 
-  const viewsTotal = viewsArr.reduce((a, b) => a + b, 0);
-  const respTotal = scaledResp.reduce((a, b) => a + b, 0);
-  const completionTotal = viewsTotal > 0 ? Math.round((respTotal / viewsTotal) * 100) : 0;
-  const avgTimeTotal = Math.round(SERIES_BASE.avgTime.reduce((a, b) => a + b, 0) / 7);
+/** Build the time buckets for the selected period (all local-time based). */
+function analyticsRanges(period: AnalyticsPeriod): AnalyticsBucketRange[] {
+  const today = startOfDay(new Date());
+  const out: AnalyticsBucketRange[] = [];
+  if (period === 'week') {
+    for (let i = 6; i >= 0; i--) {
+      const start = new Date(today);
+      start.setDate(start.getDate() - i);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      out.push({ key: isoDate(start), start, end, label: DAY_LABELS[start.getDay()] });
+    }
+  } else if (period === 'month') {
+    for (let w = 3; w >= 0; w--) {
+      const start = new Date(today);
+      start.setDate(start.getDate() - (w * 7 + 6));
+      const end = new Date(start);
+      end.setDate(end.getDate() + 7);
+      const labelDate = new Date(end);
+      labelDate.setDate(labelDate.getDate() - 1);
+      out.push({
+        key: isoDate(start),
+        start,
+        end,
+        label: labelDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+      });
+    }
+  } else {
+    for (let m = 11; m >= 0; m--) {
+      const start = new Date(today.getFullYear(), today.getMonth() - m, 1);
+      const end = new Date(today.getFullYear(), today.getMonth() - m + 1, 1);
+      out.push({
+        key: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`,
+        start,
+        end,
+        label: start.toLocaleDateString('en-US', { month: 'short' }),
+      });
+    }
+  }
+  return out;
+}
+
+/** Real analytics from actual form submissions + test-ride appointments. */
+function buildAnalytics(
+  submissions: SubmissionRow[],
+  appointments: Appointment[],
+  forms: Form[],
+  mode: 'all' | number,
+  period: AnalyticsPeriod
+) {
+  const formName = mode === 'all' ? null : forms.find((f) => f.id === mode)?.name ?? null;
+  const subs = formName === null ? submissions : submissions.filter((s) => s.formName === formName);
+
+  const events: { date: Date; testDrive: boolean; contactId: number; form: string }[] = [];
+  for (const s of subs) {
+    const d = parseStamp(s.submittedOn);
+    if (!d) continue;
+    events.push({ date: d, testDrive: isTestDriveSubmission(s), contactId: s.contactId, form: s.formName });
+  }
+  // Test-ride bookings made through the CRM (no form) only count in "All Forms".
+  if (formName === null) {
+    for (const a of appointments ?? []) {
+      if (!isTestRideAppointment(a)) continue;
+      const d = parseStamp(String(a.date ?? ''));
+      if (!d) continue;
+      events.push({ date: d, testDrive: true, contactId: a.contact_id, form: '#appointments' });
+    }
+  }
+
+  const ranges = analyticsRanges(period);
+  const buckets: { label: string; values: Record<MetricKey, number> }[] = ranges.map((r) => {
+    const inR = events.filter((e) => e.date >= r.start && e.date < r.end);
+    return {
+      label: r.label,
+      values: {
+        testDrives: inR.filter((e) => e.testDrive).length,
+        responses: inR.length,
+        leads: new Set(inR.map((e) => e.contactId)).size,
+        forms: new Set(inR.filter((e) => e.form !== '#appointments').map((e) => e.form)).size,
+      },
+    };
+  });
+
+  const inPeriod = events.filter((e) => ranges.some((r) => e.date >= r.start && e.date < r.end));
+  const totals: Record<MetricKey, number> = {
+    testDrives: buckets.reduce((s, b) => s + b.values.testDrives, 0),
+    responses: buckets.reduce((s, b) => s + b.values.responses, 0),
+    leads: new Set(inPeriod.map((e) => e.contactId)).size,
+    forms: new Set(inPeriod.filter((e) => e.form !== '#appointments').map((e) => e.form)).size,
+  };
 
   return {
-    totals: {
-      views: viewsTotal,
-      responses: respTotal,
-      avgTime: avgTimeTotal,
-      completion: completionTotal,
-    } as Record<MetricKey, number>,
-    series: {
-      views: toDaily(viewsArr),
-      responses: toDaily(scaledResp),
-      avgTime: toDaily(SERIES_BASE.avgTime),
-      completion: toDaily(completionArr),
-    } as Record<MetricKey, DailyPoint[]>,
+    totals,
+    buckets,
+    periodLabel:
+      period === 'week' ? 'Last 7 days' : period === 'month' ? 'Last 4 weeks' : 'Last 12 months',
   };
 }
 
@@ -1199,9 +1283,10 @@ function FormsDashboard() {
   });
   const [forms, setForms] = useState<Form[]>([]);
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>('all');
-  const [activeMetric, setActiveMetric] = useState<MetricKey>('views');
+  const [activeMetric, setActiveMetric] = useState<MetricKey>('testDrives');
   const [analyticsMode, setAnalyticsMode] = useState<'all' | number>('all');
-  const analytics = buildAnalytics(forms, analyticsMode);
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<AnalyticsPeriod>('week');
+  const [analyticsAppointments, setAnalyticsAppointments] = useState<Appointment[]>([]);
 
   const [draggedSidebarItem, setDraggedSidebarItem] = useState<ElementDef | null>(null);
   const [draggedCanvasIndex, setDraggedCanvasIndex] = useState<number | null>(null);
@@ -1232,6 +1317,26 @@ function FormsDashboard() {
 
   const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
   const [submissionLoading, setSubmissionLoading] = useState(false);
+
+  // Real analytics computed from actual submissions + test-ride appointments.
+  const analytics = useMemo(
+    () => buildAnalytics(submissionRows, analyticsAppointments, forms, analyticsMode, analyticsPeriod),
+    [submissionRows, analyticsAppointments, forms, analyticsMode, analyticsPeriod]
+  );
+
+  // All appointments (used to count test-ride bookings in the analytics tab).
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .listAllAppointments()
+      .then((res) => {
+        if (!cancelled) setAnalyticsAppointments(res.data ?? []);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Forms that have at least one real submission (from the DB) power the filter
   // dropdown and the table columns.
@@ -2185,7 +2290,7 @@ function FormsDashboard() {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <div className="relative">
                         <FaFilter className="absolute left-2.5 top-2 text-slate-400 text-[11px]" />
                         <select
@@ -2204,26 +2309,39 @@ function FormsDashboard() {
                         </select>
                         <FaChevronDown className="absolute right-2.5 top-2.5 text-slate-400 text-[10px] pointer-events-none" />
                       </div>
-                      <div className="flex items-center bg-white border border-slate-200 rounded divide-x divide-slate-200 shadow-sm">
-                        <button className="px-2.5 py-1 text-slate-500 hover:text-slate-800 transition">
-                          <FaRegClock />
-                        </button>
-                        <button className="px-2.5 py-1 text-slate-800 bg-slate-100 font-semibold transition">
-                          <FaListUl />
-                        </button>
+                      <div className="flex items-center bg-white border border-slate-200 rounded-lg shadow-sm p-0.5 text-xs">
+                        {(
+                          [
+                            ['week', 'Weekly'],
+                            ['month', 'Monthly'],
+                            ['year', 'Yearly'],
+                          ] as [AnalyticsPeriod, string][]
+                        ).map(([p, label]) => (
+                          <button
+                            key={p}
+                            onClick={() => setAnalyticsPeriod(p)}
+                            className={`px-2.5 py-1 rounded-md font-semibold transition ${
+                              analyticsPeriod === p
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
 
-                  <div key={String(analyticsMode)} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                  <div key={`${analyticsPeriod}-${String(analyticsMode)}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                     {METRICS.map((m, idx) => {
                       const isActive = activeMetric === m.key;
                       const value = analytics.totals[m.key];
                       const accents: Record<MetricKey, string> = {
-                        views: 'from-blue-500 to-indigo-500',
+                        testDrives: 'from-violet-600 to-fuchsia-500',
                         responses: 'from-emerald-500 to-teal-500',
-                        avgTime: 'from-amber-500 to-orange-500',
-                        completion: 'from-fuchsia-500 to-purple-500',
+                        leads: 'from-sky-500 to-blue-500',
+                        forms: 'from-amber-500 to-orange-500',
                       };
                       return (
                         <button
@@ -2258,7 +2376,7 @@ function FormsDashboard() {
                     })}
                   </div>
 
-                  <div key={`${activeMetric}-${String(analyticsMode)}`} className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 sm:p-5 evee-fade-up">
+                  <div key={`${activeMetric}-${String(analyticsMode)}-${analyticsPeriod}`} className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 sm:p-5 evee-fade-up">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                       <div>
                         <h3 className="text-sm font-semibold text-slate-800 flex items-center space-x-2">
@@ -2267,7 +2385,7 @@ function FormsDashboard() {
                             {analyticsMode === 'all' ? 'All Forms' : forms.find((f) => f.id === analyticsMode)?.name}
                           </span>
                         </h3>
-                        <p className="text-xs text-slate-500 mt-0.5">Last 7 days</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{analytics.periodLabel}</p>
                       </div>
                       <div className="flex items-center space-x-1 text-[11px] font-medium bg-slate-100 p-0.5 rounded-lg">
                         {METRICS.map((m) => (
@@ -2288,23 +2406,23 @@ function FormsDashboard() {
 
                     <div className="relative">
                       <div className="flex items-end gap-2 sm:gap-4 h-44 border-b border-slate-100 pb-2">
-                        {analytics.series[activeMetric].map((point, i) => {
-                          const max = Math.max(...analytics.series[activeMetric].map((p) => p.value), 1);
-                          const h = Math.round((point.value / max) * 100);
+                        {analytics.buckets.map((point, i) => {
+                          const max = Math.max(...analytics.buckets.map((p) => p.values[activeMetric]), 1);
+                          const h = Math.round((point.values[activeMetric] / max) * 100);
                           return (
                             <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group">
                               <span className="text-[10px] font-semibold text-slate-600 mb-1 opacity-0 group-hover:opacity-100 transition transform translate-y-1 group-hover:translate-y-0">
-                                {METRICS.find((m) => m.key === activeMetric)?.format(point.value)}
+                                {METRICS.find((m) => m.key === activeMetric)?.format(point.values[activeMetric])}
                               </span>
                               <div
                                 className={`w-full max-w-[42px] rounded-t-md evee-bar evee-delay-${i + 1} evee-bar-glow ${
-                                  activeMetric === 'completion'
-                                    ? 'bg-gradient-to-t from-emerald-600 to-emerald-400'
-                                    : activeMetric === 'avgTime'
-                                    ? 'bg-gradient-to-t from-amber-600 to-amber-400'
+                                  activeMetric === 'testDrives'
+                                    ? 'bg-gradient-to-t from-violet-600 to-fuchsia-400'
                                     : activeMetric === 'responses'
                                     ? 'bg-gradient-to-t from-teal-600 to-emerald-400'
-                                    : 'bg-gradient-to-t from-blue-600 to-indigo-400'
+                                    : activeMetric === 'leads'
+                                    ? 'bg-gradient-to-t from-sky-600 to-blue-400'
+                                    : 'bg-gradient-to-t from-amber-600 to-orange-400'
                                 } transition-all duration-300 group-hover:opacity-90`}
                                 style={{ height: `${h}%` }}
                               />
@@ -2313,7 +2431,7 @@ function FormsDashboard() {
                         })}
                       </div>
                       <div className="flex gap-2 sm:gap-4 mt-2">
-                        {analytics.series[activeMetric].map((point, i) => (
+                        {analytics.buckets.map((point, i) => (
                           <div key={i} className="flex-1 text-center text-[10px] text-slate-400 font-medium">
                             {point.label}
                           </div>

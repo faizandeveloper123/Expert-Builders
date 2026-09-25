@@ -311,6 +311,7 @@ function LeadDetailPage({ contactId, onBack, onNotify, onAvatarUpdated, position
             setContact((prev) => (prev ? { ...prev, avatar_data: data } : prev));
             onAvatarUpdated?.(contactId, data);
           }}
+          onSaved={(updates) => setContact((prev) => (prev ? { ...prev, ...updates } : prev))}
           position={position}
           onNavigate={onNavigate}
         />

@@ -2,9 +2,11 @@ import { FaCircleCheck } from 'react-icons/fa6';
 
 interface ToastProps {
   message: string | null;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
-function Toast({ message }: ToastProps) {
+function Toast({ message, actionLabel, onAction }: ToastProps) {
   const visible = message !== null;
   return (
     <div
@@ -16,6 +18,14 @@ function Toast({ message }: ToastProps) {
     >
       <FaCircleCheck className="text-emerald-400" />
       <span>{message ?? ''}</span>
+      {actionLabel && onAction && (
+        <button
+          onClick={onAction}
+          className="ml-2 rounded-md border border-slate-500 px-2.5 py-1 font-semibold text-emerald-300 hover:bg-slate-700 hover:border-emerald-400 transition-colors"
+        >
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }
