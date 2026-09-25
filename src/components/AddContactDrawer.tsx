@@ -12,6 +12,12 @@ import {
   FaXmark,
 } from 'react-icons/fa6';
 import { countryCodes, timezones } from '../data/formOptions';
+import {
+  CONTACT_TYPE_OPTIONS,
+  contactPropertyFields,
+  emptyContactProperties,
+  readContactProperties,
+} from '../data/contactPropertyFields';
 import { fileToResizedDataUrl } from '../utils';
 import type { Contact } from '../types';
 
@@ -25,6 +31,7 @@ export interface NewContactData {
   image?: string;
   initials: string;
   avatarColor: string;
+  customFields: Record<string, string>;
 }
 
 interface EmailRow {
@@ -61,7 +68,8 @@ function AddContactDrawer({ open, onClose, onSave, onNotify, editingContact }: A
   const [showError, setShowError] = useState(false);
   const [emails, setEmails] = useState<EmailRow[]>(initialEmails);
   const [phones, setPhones] = useState<PhoneRow[]>(initialPhones);
-  const [contactType, setContactType] = useState('');
+  const [contactType, setContactType] = useState<string>('Lead');
+  const [properties, setProperties] = useState<Record<string, string>>(() => emptyContactProperties());
   const [timeZone, setTimeZone] = useState('Asia/Karachi');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [dndAll, setDndAll] = useState(false);
@@ -104,7 +112,8 @@ function AddContactDrawer({ open, onClose, onSave, onNotify, editingContact }: A
         isPrimary: true,
       },
     ]);
-    setContactType(contact.contactType || (contact.tags?.[0] ?? ''));
+    setContactType(contact.contactType || (contact.tags?.[0] ?? '') || 'Lead');
+    setProperties(readContactProperties(contact.customFields));
     setTimeZone('Asia/Karachi');
     setProfileImage(contact.image ?? null);
     setDndAll(false);
@@ -125,7 +134,8 @@ function AddContactDrawer({ open, onClose, onSave, onNotify, editingContact }: A
     setShowError(false);
     setEmails([{ id: 1, value: '', isPrimary: true }]);
     setPhones([{ id: 1, type: 'Mobile', dialCode: '+92', value: '', isPrimary: true }]);
-    setContactType('');
+    setContactType('Lead');
+    setProperties(emptyContactProperties());
     setTimeZone('Asia/Karachi');
     setProfileImage(null);
     setDndAll(false);
@@ -185,7 +195,9 @@ function AddContactDrawer({ open, onClose, onSave, onNotify, editingContact }: A
     const primaryEmail = emails.find((e) => e.isPrimary && e.value.trim())?.value.trim();
     const primaryPhone = phones.find((p) => p.isPrimary && p.value.trim());
     const phone = primaryPhone ? `${primaryPhone.dialCode} ${primaryPhone.value.trim()}` : undefined;
-    const tag = contactType || 'Lead';
+    const tag = CONTACT_TYPE_OPTIONS.includes(contactType as (typeof CONTACT_TYPE_OPTIONS)[number])
+      ? contactType
+      : 'Lead';
 
     const initials =
       fullName
@@ -217,6 +229,7 @@ function AddContactDrawer({ open, onClose, onSave, onNotify, editingContact }: A
       image: profileImage ?? undefined,
       initials,
       avatarColor,
+      customFields: { ...properties },
     });
 
     onNotify(editingContact ? `Contact "${fullName}" updated` : `Contact "${fullName}" added successfully`);
@@ -286,12 +299,12 @@ function AddContactDrawer({ open, onClose, onSave, onNotify, editingContact }: A
           {/* First name */}
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
-              First name <span className="text-red-500">*</span>
+              Contact name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               required
-              placeholder="Enter First name"
+              placeholder="Enter contact name"
               value={firstName}
               onChange={(e) => {
                 setFirstName(e.target.value);
@@ -446,16 +459,73 @@ function AddContactDrawer({ open, onClose, onSave, onNotify, editingContact }: A
 
           {/* Contact type */}
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Contact type</label>
-            <select
-              value={contactType}
-              onChange={(e) => setContactType(e.target.value)}
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none bg-white text-slate-600"
-            >
-              <option value="">Select Contact type</option>
-              <option value="Lead">Lead</option>
-              <option value="Customer">Customer</option>
-            </select>
+            <label className="block font-semibold text-slate-700 mb-1">
+              Contact type <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {CONTACT_TYPE_OPTIONS.map((option) => (
+                <button
+                  type="button"
+                  key={option}
+                  onClick={() => setContactType(option)}
+                  className={`rounded-md border px-3 py-2 text-xs font-semibold transition ${
+                    contactType === option
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-slate-300 bg-white text-slate-600 hover:border-slate-400'
+                  }`}
+                  aria-pressed={contactType === option}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Property & booking details */}
+          <div className="border border-slate-200 rounded-lg p-3.5 space-y-3 bg-white">
+            <span className="block font-semibold text-slate-700">Property &amp; booking details</span>
+            <div className="grid grid-cols-2 gap-3">
+              {contactPropertyFields.map((field) => {
+                const value = properties[field.key] ?? '';
+                const controlClass =
+                  'w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none bg-white text-slate-700';
+                return (
+                  <div key={field.key} className={field.type === 'textarea' ? 'col-span-2' : undefined}>
+                    <label className="block font-semibold text-slate-700 mb-1">{field.label}</label>
+                    {field.type === 'select' ? (
+                      <select
+                        value={value}
+                        onChange={(e) => setProperties((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                        className={controlClass}
+                      >
+                        <option value="">Select status</option>
+                        {field.options?.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.type === 'textarea' ? (
+                      <textarea
+                        rows={2}
+                        placeholder={field.placeholder}
+                        value={value}
+                        onChange={(e) => setProperties((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                        className={`${controlClass} resize-y`}
+                      />
+                    ) : (
+                      <input
+                        type={field.type === 'date' ? 'date' : 'text'}
+                        placeholder={field.placeholder}
+                        value={value}
+                        onChange={(e) => setProperties((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                        className={controlClass}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Time zone */}

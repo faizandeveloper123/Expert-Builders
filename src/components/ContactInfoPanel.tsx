@@ -3,6 +3,7 @@ import type { ApiContact, ApiFollower } from '../api';
 import { api } from '../api';
 import { formatDbDate, initialsFromName, fileToResizedDataUrl, formSubmissionsOf } from '../utils';
 import { countryCodes } from '../data/formOptions';
+import { contactPropertyFields, readContactProperties } from '../data/contactPropertyFields';
 import { TIMEZONES } from '../data/timezones';
 import { useStaff } from '../StaffContext';
 import { useAuth } from '../auth';
@@ -299,6 +300,7 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
       contactType: contact.contact_type || '',
       business: contact.business_name || '',
       website: (cf['website'] as string) || '',
+      properties: readContactProperties(cf),
     };
   });
 
@@ -329,6 +331,7 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
       contactType: contact.contact_type || '',
       business: contact.business_name || '',
       website: (cf['website'] as string) || '',
+      properties: readContactProperties(cf),
     });
     setEmails([{ id: 1, value: contact.email || '' }]);
     setPhones([{ id: 1, type: 'Mobile', dialCode: '+92', value: contact.phone || '' }]);
@@ -372,6 +375,9 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
   const set = (key: keyof typeof fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setFields((prev) => ({ ...prev, [key]: e.target.value }));
 
+  const setProperty = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setFields((prev) => ({ ...prev, properties: { ...prev.properties, [key]: e.target.value } }));
+
   const setEmailRow = (id: number, value: string) =>
     setEmails((prev) => prev.map((r) => (r.id === id ? { ...r, value } : r)));
   const addEmailRow = () => setEmails((prev) => [...prev, { id: idCounter.current++, value: '' }]);
@@ -406,6 +412,11 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
       cf['timezone'] = fields.timezone;
       cf['source'] = fields.source;
       cf['website'] = fields.website;
+      for (const field of contactPropertyFields) {
+        const value = (fields.properties[field.key] ?? '').trim();
+        if (value === '') delete cf[field.key];
+        else cf[field.key] = value;
+      }
 
       const updates = {
         first_name: fields.first,
@@ -886,6 +897,32 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
                     <input type="text" value={fields.postal} onChange={set('postal')} className={inputCls} placeholder="44000" />
                   </div>
                 </div>
+              </Accordion>
+
+              <Accordion title="Property & Booking" icon={<FaRegIdCard />} searchText={fieldSearch}>
+                {contactPropertyFields.map((field) => (
+                  <div key={field.key}>
+                    <label className={labelCls}>{field.label}</label>
+                    {field.type === 'select' ? (
+                      <select value={fields.properties[field.key] ?? ''} onChange={setProperty(field.key)} className={inputCls}>
+                        <option value="">--</option>
+                        {field.options?.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={field.type === 'date' ? 'date' : 'text'}
+                        value={fields.properties[field.key] ?? ''}
+                        onChange={setProperty(field.key)}
+                        className={inputCls}
+                        placeholder={field.placeholder}
+                      />
+                    )}
+                  </div>
+                ))}
               </Accordion>
 
               <Accordion title="Additional Info" icon={<FaCircleInfo />} searchText={fieldSearch}>

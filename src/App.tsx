@@ -26,6 +26,7 @@ import BulkActionsPage from './components/BulkActionsPage';
 import AddOpportunityModal, { type OpportunityFormData } from './components/AddOpportunityModal';
 import BookAppointmentModal from './components/BookAppointmentModal';
 import { DEFAULT_VISIBLE_FIELDS, isStaticFieldLabel } from './data/tableFields';
+import { contactPropertiesPayload, contactPropertyKeys } from './data/contactPropertyFields';
 import LeadDetailPage from './components/LeadDetailPage';
 import FormsDashboard from './components/FormsDashboard';
 import DashboardPage from './components/dashboard/DashboardPage';
@@ -1000,6 +1001,7 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
         avatar_color: data.avatarColor,
         avatar_data: data.image ?? null,
         tags: [data.tag.toLowerCase()],
+        custom_fields: contactPropertiesPayload(data.customFields),
       });
       await reload();
       showToast(`Contact "${data.name}" added successfully`);
@@ -1012,6 +1014,14 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
   const handleUpdateContact = async (data: NewContactData) => {
     if (!editContact) return;
     try {
+      // The API replaces custom_fields wholesale, so send back everything the
+      // contact already had merged with the values edited in the drawer.
+      const mergedCustomFields: Record<string, unknown> = { ...(editContact.customFields ?? {}) };
+      for (const key of contactPropertyKeys) {
+        const value = (data.customFields[key] ?? '').trim();
+        if (value === '') delete mergedCustomFields[key];
+        else mergedCustomFields[key] = value;
+      }
       await api.updateContact(editContact.id, {
         first_name: data.firstName,
         last_name: data.lastName,
@@ -1020,6 +1030,7 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
         contact_type: data.tag || 'Lead',
         avatar_color: data.avatarColor,
         avatar_data: data.image ?? null,
+        custom_fields: mergedCustomFields,
       });
       setContacts((prev) =>
         prev.map((c) =>
