@@ -6,17 +6,21 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: ${{ vars.AWS_REGION || 'ap-south-1' }}
-  S3_BUCKET: ${{ vars.S3_BUCKET || 'expert-builders' }}
-  CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID || '' }}
+  VPS_HOST: ${{ vars.VPS_HOST || '81.17.101.93' }}
+  VPS_USER: ${{ vars.VPS_USER || 'root' }}
 
 permissions:
   contents: read
+
+concurrency:
+  group: expert-builders-production
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     name: Build and deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,25 +40,70 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.SECRET_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          test -n "$VPS_SSH_KEY"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Deploy static app to S3
-        run: aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ --delete --exclude ".*"
+      - name: Package deploy artifact
+        run: |
+          tar -czf expert-builders-deploy.tar.gz dist api/index.php
 
-      - name: Deploy PHP API to S3
-        run: aws s3 sync api/ s3://${{ env.S3_BUCKET }}/api/ --delete --exclude ".*"
-
-      - name: Upload nginx config
-        run: aws s3 cp nginx-expert-builders.conf s3://${{ env.S3_BUCKET }}/nginx-expert-builders.conf
-
-      - name: Invalidate CloudFront cache
-        if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
-        run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
-
-      - name: Output deployment info
-        run: echo "Deployed to s3://${{ env.S3_BUCKET }} (region ${{ env.AWS_REGION }})"
+      - name: Upload and deploy to VPS
+        run: |
+          cat > /tmp/expert-builders-deploy.sh <<'REMOTE'
+          set -e
+          APP=/var/www/expert-developers
+          ARCHIVE=/tmp/expert-builders-deploy.tar.gz
+          STAMP=$(date +%Y%m%d_%H%M%S)
+          STAGE="$APP/.github_stage_$STAMP"
+          OLD="$APP/dist_previous_$STAMP"
+          BACKUP="$APP/deploy_backup_$STAMP"
+          cleanup() {
+            status=$?
+            trap - EXIT
+            if [ "$status" -ne 0 ] && [ -d "$OLD" ]; then
+              rm -rf "$APP/dist"
+              mv "$OLD" "$APP/dist"
+            fi
+            rm -rf "$STAGE"
+            exit "$status"
+          }
+          trap cleanup EXIT
+          test -d "$APP"
+          test -f "$APP/api/config.php"
+          test -f "$APP/api/mail_secrets.php"
+          test -f "$ARCHIVE"
+          umask 077
+          mkdir "$STAGE" "$BACKUP"
+          tar -xzf "$ARCHIVE" -C "$STAGE"
+          test -f "$STAGE/dist/index.html"
+          test -f "$STAGE/api/index.php"
+          php -l "$STAGE/api/index.php"
+          nginx -t
+          cp -a "$APP/dist" "$BACKUP/dist"
+          cp -a "$APP/api" "$BACKUP/api"
+          CONFIG_BEFORE=$(sha256sum "$APP/api/config.php" | cut -d " " -f1)
+          cp "$STAGE/api/index.php" "$APP/api/index.php.new"
+          chown www-data:www-data "$APP/api/index.php.new"
+          chmod 0644 "$APP/api/index.php.new"
+          mv "$APP/dist" "$OLD"
+          mv "$STAGE/dist" "$APP/dist"
+          mv -f "$APP/api/index.php.new" "$APP/api/index.php"
+          chown -R www-data:www-data "$APP/dist"
+          CONFIG_AFTER=$(sha256sum "$APP/api/config.php" | cut -d " " -f1)
+          test "$CONFIG_BEFORE" = "$CONFIG_AFTER"
+          php -l "$APP/api/index.php"
+          printf 'DEPLOYED_AT=%s\nBACKUP=%s\nCONFIG_PRESERVED=%s\n' "$STAMP" "$BACKUP" "$CONFIG_AFTER"
+          rm -rf "$STAGE" "$ARCHIVE"
+          trap - EXIT
+          REMOTE
+          scp expert-builders-deploy.tar.gz "$VPS_USER@$VPS_HOST:/tmp/expert-builders-deploy.tar.gz"
+          scp /tmp/expert-builders-deploy.sh "$VPS_USER@$VPS_HOST:/tmp/expert-builders-deploy.sh"
+          ssh "$VPS_USER@$VPS_HOST" 'bash /tmp/expert-builders-deploy.sh'
+          ssh "$VPS_USER@$VPS_HOST" 'rm -f /tmp/expert-builders-deploy.sh'
